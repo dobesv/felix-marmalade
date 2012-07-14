@@ -1,0 +1,288 @@
+include "IwSerialise";
+include "IwMath";
+include "s3eTypes";
+include "IwGeomCore";
+
+open class IwColour {
+
+header '#include <IwColour.h>';
+
+//-----------------------------------------------------------------------------
+// Helper macros
+//-----------------------------------------------------------------------------
+//#define IW_COLOUR_565_TO_555(a) \
+//        ((((a) >> 1) & 0x7fe0) + ((a) & 0x1f))
+fun IW_COLOUR_565_TO_555 : uint16 -> uint16;
+
+//#define IW_COLOUR_8888_TO_1555(r,g,b,a) \
+//        (((r>>3)| ((g >>3)<<5) | ((b>>3)<<10)) | (a ? 0x8000 : 0))
+fun IW_COLOUR_8888_TO_1555 : uint8^4 -> uint16;
+
+ctypes IwPixel;
+
+// #define IW_RGB(r,g,b) (IwPixel)(((r)>>3<<11) | ((g)>>2<<5) | ((b)>>3))
+fun IW_RGB : int^3->IwPixel;
+
+//#define IW_COLOUR_MUL_ABC_SHIFT(c, c1, c2, s) \
+//        (c).r = ((c1).r * (c2).r) >> (s); \
+//        (c).g = ((c1).g * (c2).g) >> (s); \
+//        (c).b = ((c1).b * (c2).b) >> (s); \
+//        (c).a = ((c1).a * (c2).a) >> (s)
+
+//#define IW_COLOUR_MUL_SHIFT_R(c1, c2, s)    (((c1).r * (c2).r) >> (s))
+//#define IW_COLOUR_MUL_SHIFT_G(c1, c2, s)    (((c1).g * (c2).g) >> (s))
+//#define IW_COLOUR_MUL_SHIFT_B(c1, c2, s)    (((c1).b * (c2).b) >> (s))
+//#define IW_COLOUR_MUL_SHIFT_A(c1, c2, s)    (((c1).a * (c2).a) >> (s))
+
+/**
+ * @addtogroup iwgxgroup
+ * @{
+ */
+
+
+/**
+ * @defgroup colours Colours
+ *
+ * @note For more information on IwGx Colour, see the
+ * @ref colour "Colour" section of the <i>IwGx API Documentation</i>.
+ * @{
+ */
+
+//-----------------------------------------------------------------------------
+// CIwColour
+//-----------------------------------------------------------------------------
+/**
+ * Colour object.
+ * See the @ref colour "Colour" module overview for more information.
+ *
+ * @autoexp{&lt;r\,x&gt;\,&lt;g,x&gt;\,&lt;b,x&gt;\,&lt;a,x&gt;}
+ * @par Required Header Files
+ * IwColour.h
+ */
+ctypes CIwColour;
+ 
+//class CIwColour
+//{
+    /**
+     * Serialises to/from binary file.
+     */
+
+//    inline void Serialise()
+
+proc Serialise : CIwColour = "$1.Serialise();";
+
+    /**
+     * Sets all 4 components from a single input.
+     * @param rgba 32-bit value to set.
+     * @see SetOpaque, SetGrey
+     * @par Required Header Files
+ * IwColour.h
+ */
+
+//    void Set(uint32 rgba)
+proc Set : CIwColour*uint32 = "$1.Set($2)";
+
+
+    /**
+     * Sets all 4 components.
+     * @param _r 8-bit r value to set.
+     * @param _g 8-bit g value to set.
+     * @param _b 8-bit b value to set.
+     * @param _a 8-bit a value to set.
+     * @see SetOpaque, SetGrey
+     * @par Required Header Files
+ * IwColour.h
+ */
+//    inline void Set(uint8 _r, uint8 _g, uint8 _b, uint8 _a)
+proc Set : CIwColour * uint8^4 = "$1.Set($b)";
+
+    /**
+     * Sets r,g,b components with full opacity.
+     * @param _r 8-bit r value to set.
+     * @param _g 8-bit g value to set.
+     * @param _b 8-bit b value to set.
+     * @see SetOpaque, SetGrey
+     * @par Required Header Files
+ * IwColour.h
+ */
+//    inline void Set(uint8 _r, uint8 _g, uint8 _b)
+proc Set : CIwColour * uint8^4 = "$1.Set($b)";
+
+    /**
+     * Sets all 4 components from a single input.
+     * @param col Colour structure to set.
+     * @see SetOpaque, SetGrey
+     * @par Required Header Files
+ * IwColour.h
+ */
+//    inline void Set(CIwColour other) { *(uint32*)this = *(uint32*)&other; }
+proc Set : CIwColour = "$2.Set($2)";
+
+    /**
+     * Gets the colour as a uint32 value.
+     * @see Set
+     * @par Required Header Files
+ * IwColour.h
+ */
+    inline uint32 Get() const
+
+fun Get : CIwColour -> uint32 = "$1.Get()";
+
+    /**
+     * Sets all 4 components from a single input, and make alpha value fully opaque.
+     * @param rgba 24-bit value to set.
+     * @see Set, SetGrey
+     * @par Required Header Files
+ * IwColour.h
+ */
+//    inline void SetOpaque(uint32 rgb)
+proc SetOpaque : CIwColour * uint32 = "$1.SetOpaque($2);";
+
+    /**
+     * Sets all 4 components from a single input, by specifying a grayscale value.
+     * @param g Greyscale value to set (0..255).
+     * @see Set, SetOpaque
+     * @par Required Header Files
+ * IwColour.h
+ */
+//    inline void SetGrey(uint8 g) { SetOpaque(g | g << 8 | g << 16); }
+proc SetGrey : CIwColour * uint32 = "$1.SetGrey($2);";
+
+    //-----------------------------------------------------------------------------
+    // Operator overloads
+    //-----------------------------------------------------------------------------
+    /**
+     * Sets all 4 components from a single input.
+     * @param rgba 32-bit colour value to set.
+     * @result Reference to the colour object itself.
+     */
+//    CIwColour operator= (uint32 rgba)
+
+    /**
+     * Tests if colour is equivalent to another 32-bit value.
+     * @param col 32-bit colour value to test against.
+     * @result true only if the values are equivalent.
+     */
+//    bool operator == (uint32 rgba) const
+fun == : CIwColour * uint32 -> bool = "$1 == $2";
+
+
+    /**
+     * Tests if colour is equivalent to another CIwColour object.
+     * @param other CIwColour object to test against.
+     * @result true only if the values are equivalent.
+     */
+//    bool operator== (const CIwColour& other) const
+fun == : CIwColour * CIwColour -> bool = "$1 == $2";
+
+    /**
+     * Tests if colour is not equivalent to another 32-bit value.
+     * @param col 32-bit colour value to test against.
+     * @result true only if the values are not equivalent.
+     */
+//    bool operator!= (uint32 rgba) const
+fun == : CIwColour * uint32 -> bool = "$1 == $2";
+
+    /**
+     * Tests if colour is not equivalent to another CIwColour object.
+     * @param other CIwColour object to test against.
+     * @result true only if the values are NOT equivalent.
+     */
+//    bool operator!= (const CIwColour& other) const
+fun == : CIwColour * uint32 -> bool = "$1 == $2";
+
+
+    /**
+     * Component-wise multiplication by another CIwColour object,
+     * where 0x100 is equivalent to unity.
+     * @param other CIwColour object to scale by.
+     * @result Reference to the colour object itself.
+     */
+//    CIwColour operator*= (const CIwColour& other)
+// TODO 
+    /**
+     * Saturated component-wise multiplication by an iwfixed scalar,
+     * @param rhs iwfixed value to scale by.
+     * @result Result colour object itself.
+     */
+//    CIwColour operator* (iwfixed other)
+fun * : IwColour * iwfixed -> CIwColour = "$1 * $2";
+
+    /**
+     * Saturated component-wise addition with another CIwColour object.
+     * @param other CIwColour object to add.
+     * @result Result colour object itself.
+     */
+//    CIwColour operator+ (CIwColour other)
+fun + : IwColour + CIwColour -> CIwColour = "$1 + $2";
+
+    /**
+     * Component-wise addition with another CIwColour object.
+     * @param other CIwColour object to add.
+     * @result Reference to the colour object itself.
+     */
+//    CIwColour operator+=(const CIwColour& other)
+
+    /**
+     * Component-wise subtraction by another CIwColour object.
+     * @param other CIwColour object to subtract.
+     * @result Reference to the colour object itself.
+     */
+//    CIwColour operator-= (const CIwColour& other)
+
+fun r : IwColour -> uint8 = "$1.r";
+fun g : IwColour -> uint8 = "$1.g";
+fun b : IwColour -> uint8 = "$1.b";
+fun a : IwColour -> uint8 = "$1.a";
+
+    // Members
+//    uint8   r;  //!< 8-bit red component.
+//    uint8   g;  //!< 8-bit green component.
+//    uint8   b;  //!< 8-bit blue component.
+//    uint8   a;  //!< 8-bit alpha component.
+;
+
+/**
+ * Enumeration values for fixed colours.
+ * @par Required Header Files
+ * IwColour.h
+ */
+cenum IwGxColourFixed =
+    IW_GX_COLOUR_BLACK,     //!< black
+    IW_GX_COLOUR_WHITE,     //!< white
+    IW_GX_COLOUR_GREY,      //!< grey
+    IW_GX_COLOUR_RED,       //!< red
+    IW_GX_COLOUR_GREEN,     //!< green
+    IW_GX_COLOUR_BLUE,      //!< blue
+    IW_GX_COLOUR_MAGENTA,   //!< magenta
+    IW_GX_COLOUR_CYAN,      //!< cyan
+    IW_GX_COLOUR_YELLOW,    //!< yellow
+    IW_GX_COLOUR_MAX,
+;
+
+// Default colour to use for debug drawing.
+const IW_GX_DEBUG_COLOUR_DEFAULT:IwGxColourFixed;
+
+// Array of fixed colours values, indexed using IwColourFixed enumeration.
+// var +g_IwGxColours : +CIwColour;
+
+/**
+ * Gets a fixed colour, using the IwGxColourFixed enumeration list.
+ * @param colID Fixed colour ID from the IwGxColourFixed enumeration list.
+ * @result Reference to the fixed colour.
+ * @par Required Header Files
+ * IwColour.h
+ */
+//INLINE const CIwColour& IwGxGetColFixed(IwGxColourFixed colID)
+//{
+//    IwAssertMsgTrapN(749,GX, colID < IW_GX_COLOUR_MAX, ("Colour ID out of range; using black"), colID = IW_GX_COLOUR_BLACK);
+//    return g_IwGxColours[colID];
+//}
+fun IwGxGetColFixed : IwGxColourFixed -> CIwColour;
+
+
+/** @} */
+/** @} */
+
+}
+

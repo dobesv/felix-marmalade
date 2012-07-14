@@ -1,0 +1,9 @@
+include "IwGeomCore";
+include "IwGeomVec";
+include "IwGeomMat";
+include "IwGeomMat2D";
+include "IwGeomPlane";
+include "IwGeomQuat";
+include "IwGeomSphere";
+include "IwGeomBBox";
+include "IwGeomIntersect";

@@ -1,0 +1,407 @@
+include "s3eTypes";
+
+open class s3eDebug {
+
+header "#include <s3eDebug.h>";
+
+/**
+ * Debug Properties.
+ * @see s3eDebugGetInt
+ * @see s3eDebugSetInt
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+cenum s3eDebugProperty =
+    /**
+     * [read,write,int] If this is non-zero then tracing is enabled
+     */
+    S3E_DEBUG_TRACE_ENABLED,
+
+    /**
+     * [read,write,int] If this is non-zero and tracing is enabled then all trace messages
+     * will be written to the trace file as well as the debug output.
+     */
+    S3E_DEBUG_TRACE_TO_FILE,
+
+    /**
+     * [read,write,int] If this is non-zero then assertions are enabled.
+     */
+    S3E_DEBUG_ASSERT_ENABLED,
+
+    /**
+     * [read, int] Returns non-zero if the S3E loader was built with debug
+     * support.
+     */
+    S3E_DEBUG_AVAILABLE,
+
+    /**
+     * [read,write,int] Controls how large the debug print font is, 1 = normal size, 2 = twice normal size
+     */
+    S3E_DEBUG_FONT_SCALE,
+
+    /**
+     * [read, int] Returns the width of the debug print font in pixels.
+     */
+    S3E_DEBUG_FONT_WIDTH,
+
+    /**
+     * [read, int] Returns the height of the debug print font in pixels.
+     */
+    S3E_DEBUG_FONT_HEIGHT
+
+;
+
+const S3E_DEBUG_FONT_SIZE_WIDTH:uint;
+const S3E_DEBUG_FONT_SIZE_HEIGHT:uint;
+
+/**
+ * Retrieves an integer property for the debug device.
+ * @see s3eDebugSetInt
+ * @param property The property to query.
+ * @return
+ *  - The value of the requested property if property is valid.
+ *  - -1 if @a property is not valid.\n
+ *      Call s3eDebugGetError() to retrieve an error code.
+ *      This will return:
+ *          @ref S3E_DEBUG_ERR_PARAM if @e property is not valid.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API int32 s3eDebugGetInt(s3eDebugProperty property);
+gen s3eDebugGetInt:s3eDebugProperty->int32;
+
+/**
+ * Sets an integer property for the debug device.
+ * @param property The property to set.
+ * @param value The value to set the property to.
+ * @see s3eDebugGetInt
+ * @return
+ *  - @ref S3E_RESULT_SUCCESS if no error occurred.
+ *  - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *      Call s3eDebugGetError() to retrieve an error code.
+ *      This will return:
+ *      @ref S3E_DEBUG_ERR_PARAM if @e property is invalid or @e value is invalid.
+ * @remark This function can be used with @ref S3E_DEBUG_TRACE_ENABLED to enable
+ * or disable tracing at runtime.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API s3eResult s3eDebugSetInt(s3eDebugProperty property, int32 value);
+gen s3eDebugSetInt : s3eDebugProperty * int32 -> s3eResult;
+
+/**
+ * Debug Callbacks.
+ * @see s3eDebugRegister, s3eDebugUnRegister
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+cenum s3eDebugCallback =
+    /**
+     * Called when an assert is generated via s3eDebugAssertShow() (or the
+     * higher level IwAssert*()).
+     *
+     * Any callback created to respond to this event should conform to the following:
+     *
+     * @param systemData This is a pointer to message text.
+     * @return One of @ref s3eErrorShowResult.
+     * @remark If the return value is not equal to @ref S3E_ERROR_SHOW_AGAIN then s3e
+     * will not display the assertion, and the return value of the callback
+     * will be the return value of s3eDebugAssertShow(). If the return value is
+     * @ref S3E_ERROR_SHOW_AGAIN then s3e will display the assertion as normal,
+     * and return a value according to user input.
+     */
+    S3E_DEBUG_ASSERT,
+    /**
+     * Called when an assert is generated via s3eDebugErrorShow() (or the
+     * higher level IwError*()).
+     *
+     * Any callback created to respond to this event should conform to the following:
+     *
+     * @param systemData This is a pointer to message text.
+     * @return One of @ref s3eErrorShowResult.\n
+     * @remark If the callback return value is not equal to @ref S3E_ERROR_SHOW_AGAIN
+     * then s3e will not display the error, and the return value of the
+     * callback will be the return value of s3eDebugErrorShow().  If the
+     * callback return value is @ref S3E_ERROR_SHOW_AGAIN then s3e will display
+     * the error as normal, and return a value according to user input.
+     */
+    S3E_DEBUG_ERROR,
+
+    S3E_DEBUG_CALLBACK_MAX
+;
+
+/**
+ * Registers a callback for a given event.
+ *
+ * The available callback types are listed in @ref s3eDebugCallback.
+ * @param cbid ID of the callback for which to register.
+ * @param fn callback function.
+ * @param userData Value to pass to the @e userData paramater of @e fn.
+ * @return
+ *  - @ref S3E_RESULT_SUCCESS if no error occurred.
+ *  - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *         Call @ref s3eDebugGetError() to retrieve an error code. This will return one of:
+ *      - @ref S3E_DEBUG_ERR_PARAM if @e cbid is not a valid member of @ref s3eDebugCallback or @e fn is NULL.
+ *      - @ref S3E_DEBUG_ERR_TOO_MANY If the maximum number of callbacks for this device has been exceeded.
+ *      - @ref S3E_DEBUG_ERR_ALREADY_REG If (@e cbid, @e fn) has already been registered.
+ * @remark This can be used to register callbacks for when asserts and errors
+ * occur. These in turn can override assert and error behaviour.
+ * @note For more information on the @a systemData passed as a parameter to the
+ * callback * registered using this function or the expected return values of
+ * that callback, see the
+ * @ref s3eDebugCallback enum.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API s3eResult s3eDebugRegister(s3eDebugCallback cbid, s3eCallback fn, void* userData);
+gen s3eDebugRegister : s3eDebugCallback * s3eCallback * +void -> s3eResult;
+
+/**
+ * Unregister a callback for a given event.
+ * @param cbid ID of the callback for which to register.
+ * @param fn Callback Function.
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred.
+ * - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *        Call s3eDebugGetError() to retrieve an error code.
+ *        This will return one of:
+ *   - @ref S3E_DEBUG_ERR_PARAM if @e cbid is not a valid member of @ref s3eDebugCallback.
+ *   - @ref S3E_DEBUG_ERR_NOT_FOUND if @e fn is not registered for callback @e cbid.
+ *
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API s3eResult s3eDebugUnRegister(s3eDebugCallback cbid, s3eCallback fn);
+gen s3eDebugUnRegister : s3eDebugCallback * s3eCallback -> s3eResult;
+
+/**
+ * Debug Errors.
+ * @see s3eDebugGetError
+ * @see s3eDebugGetErrorString
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+cenum s3eDebugError =
+    S3E_DEBUG_ERR_NONE          ,    ///< No Error.
+    S3E_DEBUG_ERR_PARAM         ,    ///< Invalid parameter.
+    S3E_DEBUG_ERR_TOO_MANY      ,    ///< Maximum number of callbacks exceeded.
+    S3E_DEBUG_ERR_ALREADY_REG   ,    ///< The specified callback is already registered.
+    S3E_DEBUG_ERR_NOT_FOUND          ///< The specified callback was not found for removal.
+;
+
+/**
+ * Retrieve the last error, if any, for this Debug.
+ * @see s3eDebugGetErrorString
+ *
+ * @remark Calling this function will retrieve the last error and then remove it
+ * from memory; therefore, any further calls to this function will not return
+ * an error unless a subsequent error has occurred.
+ *
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API s3eDebugError s3eDebugGetError();
+gen s3eDebugGetError : unit -> s3eDebugError;
+
+/**
+ * Retrieve the last error as a string, if any, for this Debug. This is only available in debug builds.
+ * @see s3eDebugGetError
+ *
+ * @remark This function, as opposed to s3eDebugGetError(), will always return
+ * the last error no matter how many times it is called. This function should not be
+ * relied upon to indicate whether an error has just occurred.
+ *
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API const char* s3eDebugGetErrorString();
+gen s3eDebugGetErrorString : unit -> +char;
+
+cenum s3eErrorShowResult =
+    /** 'Continue' button in in error dialog was selected. */
+    S3E_ERROR_SHOW_CONTINUE,
+    /** 'Stop' button in error dialog was selected. */
+    S3E_ERROR_SHOW_STOP,
+    /** 'Ignore' button in in error dialog was selected. */
+    S3E_ERROR_SHOW_IGNORE,
+    /**
+     * For use in @ref S3E_DEBUG_ASSERT or @ref S3E_DEBUG_ERROR callbacks;
+     * causes s3e to continue to display the
+     * assertion or error message.
+     */
+    S3E_ERROR_SHOW_AGAIN
+;
+
+/**
+ * Types of error message.
+ */
+cenum s3eMessageType =
+    /**
+     * A Message dialog with a single 'continue' option for the user to select to dismiss the message.
+     * When displayed via s3eDebugErrorShow() or s3eDebugAssertShow(), this dialog will return
+     * @ref S3E_ERROR_SHOW_CONTINUE.
+     */
+    S3E_MESSAGE_CONTINUE,
+    /**
+     * A Message dialog with a 'continue' and a 'stop' option for the user to select.
+     * When displayed via s3eDebugErrorShow() or s3eDebugAssertShow(), this dialog will return
+     * @ref S3E_ERROR_SHOW_CONTINUE or @ref S3E_ERROR_SHOW_STOP according to what the user selected.
+     */
+    S3E_MESSAGE_CONTINUE_STOP,
+    /**
+     * A Message dialog with 'continue', 'stop' and 'ignore' options for the user to select.
+     * When displayed via s3eDebugErrorShow() or s3eDebugAssertShow(), this dialog will return
+     * @ref S3E_ERROR_SHOW_CONTINUE, @ref S3E_ERROR_SHOW_STOP or @ref S3E_ERROR_SHOW_IGNORE
+     * according to what the user selected.
+     */
+    S3E_MESSAGE_CONTINUE_STOP_IGNORE
+;
+
+/**
+ * Returns whether or not a debugger is present.
+ * @return S3E_TRUE if a debugger is connected to the S3E application, S3E_FALSE otherwise.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API s3eBool s3eDebugIsDebuggerPresent();
+gen s3eDebugIsDebuggerPresent : unit -> bool;
+
+/**
+ * Outputs a single line debug message to a logger, console, etc. depending on
+ * the system on which the program is run.  The string should not contain any newline
+ * characters.
+ * @param pStr NULL terminated string to output to debug console.
+ * @remark If pStr is too long for the underlying system it will be truncated.
+ *         Under IDE's such as Visual Studio this will output text to the
+ *         logger window.
+ *
+ *         Under Visual Studio 6, calling this too frequently (> ~1000 per second)
+ *         may cause trace lines to be lost
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API void s3eDebugOutputString(const char* pStr);
+proc s3eDebugOutputString : +char;
+
+/**
+ * Displays the text specified by the input parameter string as a modal dialog.
+ * This debug message type is included in release builds, so should be used for
+ * errors that may be encountered by the end user.
+ * @param type Message type to display.
+ * @param string Error text for dialog (if too long, this will be truncated).
+ * @return @ref s3eErrorShowResult enumeration value according to how the user dismissed the dialog.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API s3eErrorShowResult s3eDebugErrorShow(s3eMessageType type, const char* string);
+gen s3eDebugErrorShow : s3eMessageType * +char -> s3eErrorShowResult;
+
+/**
+ * Displays and model error dialog on the screen.
+ * Functions exactly like s3eDebugErrorShow but takes printf-style arguments,
+ * and defaults to S3E_ERROR_SHOW_CONTINUE.
+ */
+// S3E_EAPI s3eErrorShowResult s3eDebugErrorPrintf(const char* fmt, ...);
+// TODO !
+
+/**
+ * Displays the text specified by the input parameter string as a modal dialog.
+ * This debug message type is not included in release builds.
+ * This differs from s3eDebugErrorShow() in that this will do nothing when running
+ * in a release environment.
+ * @param type Message type to display.
+ * @param string Error text for dialog (if too long, this will be truncated).
+ * @return @ref s3eErrorShowResult enumeration value according to how the user dismissed the dialog. In
+ * a release environment, this function will return immediately with S3E_ERROR_SHOW_CONTINUE.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API s3eErrorShowResult s3eDebugAssertShow(s3eMessageType type, const char* string);
+gen s3eDebugAssertShow : s3eMessageType * +char -> s3eErrorShowResult;
+
+/**
+ * Write to the trace output.
+ * @param string NULL-terminated string to write.
+ * @remark @e string will be written as a line to the trace file, preceded with a timestamp
+ * Writing to the trace file involves writing to permanent storage and can be
+ * slow on some devices
+ * (writing trace to flash memory, e.g. an MMC card, can take up to 200ms per
+ * call to s3eDebugTraceLine).
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API void s3eDebugTraceLine(const char* string);
+proc s3eDebugTraceLine : +char;
+
+/**
+ * Write to the trace output.
+ * Functions exactly like @ref s3eDebugTraceLine but takes printf-style
+ * arguments.
+ */
+// S3E_EAPI int s3eDebugTracePrintf(const char* fmt, ...);
+// gen s3eDebugTracePrintf : +char -> int;
+
+/**
+ * Clear the existing trace file.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API void s3eDebugTraceClearFile();
+proc s3eDebugTraceClearFile : unit;
+
+/**
+ * Flush buffers writing output.
+ * @remark On many platforms this is unnecessary as s3eDebugTraceLine()
+ * guarantees its output has been written to a file.
+ * @par Required Header Files
+ * s3eDebug.h
+ */
+// S3E_API void s3eDebugTraceFlush();
+proc s3eDebugTraceFlush : unit;
+
+/**
+ * Prints a text message on the current surface.
+ * @param x Row from top.
+ * @param y Column from left.
+ * @param string Message to be printed.
+ * @param wrap set to S3E_TRUE to wrap text at right edge of the screen. Otherwise text will be clipped.
+ * @remark
+ * @e string will be printed at (@e x, @e y) on the surface returned by s3eSurfacePtr() with an 6x8
+ * pixel font. By default the text will be drawn white.
+ * There are several special commands that can be inserted into @e string which
+ * will affect the printing of following character. The commands begin with the
+ * backtick (`) character
+ *  - `xrrggbb will colour the text. rr, gg, bb are (lower-case) hex values from 00 to ff
+ *     specifying red, green and blue.
+ *     e.g "`xff0000MyText" will print "MyText" in red. The text will no longer be xor'd against the surface.
+ *  - `a will cause the background of the text to be drawn black, and the foreground text will be drawn white
+ *     without any xor operation
+ *  - `i will cause the background of the text to be drawn with the text colour (default white, but changeable
+ *     via `x) and the text itself to be drawn black
+ *  - `s will cause the text will be drawn white but this will be xor'd with the current surface
+ *     contents. This is so that the text is always visible.
+ *
+ */
+// S3E_API void s3eDebugPrint(int x, int y, const char* string, s3eBool wrap);
+proc s3eDebugPrint : int * int * +char * bool;
+
+/**
+ * Prints a text message on the current surface.
+ * Functions exactly like @ref s3eDebugPrint but takes printf-style
+ * arguments.
+ */
+// S3E_EAPI void s3eDebugPrintf(int x, int y, s3eBool wrap, const char* fmt, ...);
+// TODO 
+
+/**
+ * Function to dynamically turn the given trace channel on or off.
+ * Returns the channel's previous state.
+ * @param channel Name of the trace channel to change.
+ * @param new_state The new boolean state of the channel.S3E_TRUE to enable or S3E_FALSE to disable tracing to the channel.
+ */
+// S3E_API s3eBool s3eDebugTraceChannelSwitch(const char* channel, s3eBool new_state);
+gen s3eDebugTraceChannelSwitch : +char * bool -> bool;
+
+
+}
+

@@ -1,0 +1,65 @@
+open class s3eVersion {
+
+header s3eVersion_h =   "#include <s3eVersion.h>";
+
+/**
+ * Major S3E versions are not backwards source compatible and not backwards
+ * binary compatible.  An application that compiles against S3E with major
+ * version x will not necessarily compile against S3E with major version
+ * y, for all y != x.
+ * Major S3E revisions are not binary compatible with each other i.e. an
+ * application built for S3E with major version x will not necessarily run
+ * correctly on S3E with major version y, for all y != x. Major S3E versions are
+ * for major changes to the API that will require re-coding of some parts of an
+ * S3E application
+ * to maintain compatibility.
+ * Major S3E version changes include:-
+ *      -Changes to s3e API function behaviour.
+ *      -Removal of s3e API functions.
+ *      -Changes in structure of s3e data types.
+ * @par Required Header Files:
+ * s3eVersion.h
+ */
+const major:uint = "S3E_VERSION_MAJOR" requires s3eVersion_h;
+
+/**
+ * Minor S3E versions are backwards source compatible and backwards binary compatible.
+ * An application that compiles against S3E with minor version x will compile
+ * against S3E with minor version x+1. The converse is not
+ * necessarily true.
+ * An application that is built for S3E with minor version x will run correctly
+ * on S3E with minor version x+1. The converse is not necessarily true.
+ * Minor S3E version changes will include:-
+ *      -Addition of s3e API functions.
+ *      -Addition of s3e device properties, enum values etc.
+ * @par Required Header Files:
+ * s3eVersion.h
+ */
+const minor:uint = "S3E_VERSION_MINOR" requires s3eVersion_h;
+
+/**
+ * S3E revisions are source and binary compatible.
+ * An application that compiles against S3E with minor version x will compile
+ * against S3E with minor version y, for all x,y.
+ * An application that is built for S3E with minor version x will run correctly
+ * on S3E with minor version y, for all x,y.
+ * S3E revisions are for bug-fixes only.
+ * @par Required Header Files:
+ * s3eVersion.h
+ */
+const revision:uint = "S3E_VERSION_REVISION" requires s3eVersion_h;
+
+const version_string:+char = "S3E_VERSION_STRING" requires s3eVersion_h;
+
+/**
+ * Defines the version number of S3E. This can be interpreted as a hex number in the format
+ * mmnnrr where:
+ * mm = major version (see @ref S3E_VERSION_MAJOR),
+ * nn = minor version (see @ref S3E_VERSION_MINOR),
+ * rr = revision (see @ref S3E_VERSION_REVISION).
+ * @par Required Header Files:
+ * s3eVersion.h
+ */
+const version:uint = "S3E_VERSION" requires s3eVersion_h;
+
+}

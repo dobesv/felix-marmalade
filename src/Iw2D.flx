@@ -1,0 +1,808 @@
+include "s3eSurface"
+include "IwColour"
+include "IwGeom"
+include "IwUtil"
+
+open class Iw2D {
+
+header '#include <Iw2D.h>';
+
+/**
+ * @defgroup iw2dgroup Iw2D API Reference
+ */
+
+ctypes CIw2DImage;
+
+//class CIw2DImage
+//{
+//public:
+    /**
+     * Get the width of the image
+     * @return the width of the image (in pixels)
+     * @par Required Header Files
+     * Iw2D.h
+     */
+//    virtual int16 GetWidth() = 0;
+fun GetWidth : CIw2DImage -> int16 = "$1.GetWidth()";
+
+    /**
+     * Get the height of the image
+     * @return the height of the image (in pixels)
+     * @par Required Header Files
+     * Iw2D.h
+     */
+//    virtual int16 GetHeight() = 0;
+fun GetHeight : CIw2DImage -> int16 = "$1.GetHeight()";
+
+    /**
+     * Get the IwGx material associated with this image
+     * @return the IwGx material associated with this image
+     * @par Required Header Files
+     * Iw2D.h
+     */
+//    virtual CIwMaterial* GetMaterial() = 0;
+fun GetMaterial : CIw2DImage -> int16 = "$1.GetMaterial()";
+
+//    virtual ~CIw2DImage() {};
+proc delete : CIw2DImage = "delete $1;";
+//};
+
+/**
+ * Object representing a bmp font prepared for blitting
+ */
+ctypes CIw2DFont;
+//class CIw2DFont
+//{
+    /**
+     * Get the height of the font
+     * @return the line height of the font (in pixels)
+     * @par Required Header Files
+     * Iw2D.h
+     */
+//    virtual int32 GetHeight() = 0;
+fun GetHeight: CIw2DFont -> int32 = "$1.GetHeight()";
+
+
+//    virtual ~CIw2DFont() {};
+proc delete : CIw2DFont = "delete $1;";
+//};
+
+/**
+ * Object representing an offscreen surface that can be used as a destination and source for blitting
+ */
+//class CIw2DSurface
+ctypes CIw2DSurface;
+//{
+//public:
+//    virtual ~CIw2DSurface() {};
+proc delete : CIw2DSurface = "delete $1";
+//};
+
+/**
+ * @defgroup iw2dDrawingContext Drawing Context
+ * The drawing context affects subsequent drawing operations. For example, once the 2D colour has been
+ * set, it will affect all primitive, image and font rendering. Not all context parameters affect all
+ * drawing operations, for example the Iw2DImageTransform will only affect images.
+ *
+ * @{
+ */
+
+/**
+ * Set the colour for subsequent drawing operations. Default is white.
+ * @param colour The colour for subsequent drawing operations
+ * @note In Iw2D, the colour always implies the best choice of modulation mode.
+ * Setting colour to white is equivalent to turning image modulation off and
+ * will use the optimised path (equivalent to using CIwMaterial::MODULATE_NONE
+ * in IwGx).
+ * @see Iw2DGetColour
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetColour(CIwColour colour);
+proc Iw2DSetColour : CIwColour;
+
+/**
+ * Set the colour for subsequent drawing operations. Default is white.
+ * @param colour The colour for subsequent drawing operations. This 32 bit
+ * number is in ABGR_8888 format, i.e. 0xff000000 is black with full alpha.
+ * @note In Iw2D, the colour always implies the best choice of modulation mode.
+ * Setting colour to white is equivalent to turning image modulation off and
+ * will use the optimised path (equivalent to using CIwMaterial::MODULATE_NONE
+ * in IwGx).
+ * @see Iw2GetColour
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetColour(uint32 colour);
+proc Iw2DSetColour : uint32;
+
+
+/**
+ * Get the current colour for drawing operations.
+ * @return The current colour for drawing operations.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIwColour Iw2DGetColour();
+gen Iw2DGetColour : unit -> CIwColour;
+
+const IW2D_FLIP_X_F:int;
+const IW2D_FLIP_Y_F:int;
+const IW2D_SWAP_XY_F:int;
+
+
+cenum CIw2DImageTransform =
+        IW_2D_IMAGE_TRANSFORM_NONE,                                                             //!< No transformation
+        IW_2D_IMAGE_TRANSFORM_ROT90,                 //!< Rotate 90 degrees clockwise
+        IW_2D_IMAGE_TRANSFORM_ROT180,                  //!< Rotate 180 degrees
+        IW_2D_IMAGE_TRANSFORM_ROT270,                 //!< Rotate 270 degrees clockwise
+        IW_2D_IMAGE_TRANSFORM_FLIP_X,                                  //!< Flip horizontally
+        IW_2D_IMAGE_TRANSFORM_FLIP_Y,                                  //!< Flip vertically
+;
+
+/**
+ * Perform an image transformation on an arbitrary transformed image.
+ * Consecutive operations can be performed on the transform alone to yield some final desired transform.
+ * @param state a member of CIw2DImageTransform representing the current transformed state of an image
+ * @param op a member of CIw2DImageTransform to apply to the state in the first parameter
+ * @return a member of CIw2DImageTransform that represents the operation on the first parameter.
+ * @see Iw2DGetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DImageTransform Iw2DImageTransformOp(CIw2DImageTransform state, CIw2DImageTransform operation);
+gen Iw2DImageTransformOp : CIw2DImageTransform * CIw2DImageTransform -> CIw2DImageTransform;
+
+/**
+ * Set the transformation for subsequent image drawing operations. Default is IW_2D_IMAGE_TRANSFORM_NONE.
+ * @param trans a member of CIw2DImageTransform to apply to subsequent images
+ * @see Iw2DGetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetImageTransform(CIw2DImageTransform trans);
+proc Iw2DSetImageTransform : CIw2DImageTransform;
+
+/**
+ * Get the current transformation for image drawing operations.
+ * @return a member of CIw2DImageTransform that applies to current image drawing
+ * @see Iw2DSetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DImageTransform Iw2DGetImageTransform();
+gen Iw2DGetImageTransform : unit -> CIw2DImageTransform;
+
+
+/**
+ * Set the font for subsequent string drawing operations. Default is NULL (i.e. a font must be set prior
+ * to any string drawing).
+ * @param font The font to use for string drawing
+ * @see Iw2DGetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetFont(CIw2DFont* font);
+proc Iw2DSetFont : +CIw2DFont;
+
+/**
+ * Get the font for subsequent string drawing operations.
+ * @return The font to use for string drawing
+ * @see Iw2DGetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DFont* Iw2DGetFont();
+gen Iw2DGetFont : unit -> +CIw2DFont;
+
+/**
+ * Set the destination surface for subsequent drawing operations. Pass NULL for the default screen surface.
+ * Default is NULL.
+ * On some device/HW combinations true offscreen surfaces may not be available, on these devices setting
+ * the surface to anything other than the default screen surface will return false.
+ * It is not permitted to render from a surface to itself.
+ * @param surface The surface to draw to.
+ * @return true if the surface destination was set.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// bool Iw2DSetSurface(CIw2DSurface* surface);
+gen Iw2DSetSurface : +CIw2DSurface -> bool;
+
+/**
+ * Get the destination surface for subsequent drawing operations.
+ * @return surface The current surface to draw to (NULL for the default screen surface).
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DSurface* Iw2DGetSurface();
+gen Iw2DGetSurface : unit -> +CIw2DSurface;
+
+
+cenum CIw2DAlphaMode =
+    IW_2D_ALPHA_NONE, //!< Normal alpha (blend alpha channel if present in image)
+    IW_2D_ALPHA_HALF, //!< Composite 50:50 with current target
+    IW_2D_ALPHA_ADD,  //!< Straight additive with current target
+    IW_2D_ALPHA_SUB,  //!< Straight subtractive with current target
+;
+
+
+/**
+ * Set the alpha mode for subsequent drawing operations. Default is IW_2D_ALPHA_NONE.
+ * @note non-full alpha in the colour will activate normal opacity blending automatically.
+ * @param mode The alpha mode for subsequent drawing
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetAlphaMode(CIw2DAlphaMode mode);
+proc Iw2DSetAlphaMode : CIw2DAlphaMode;
+
+
+/**
+ * Get the alpha mode for subsequent drawing operations.
+ * @return mode The alpha mode for subsequent drawing
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DAlphaMode Iw2DGetAlphaMode();
+gen Iw2DGetAlphaMode : unit -> CIw2DAlphaMode;
+
+
+/**
+ * Set a 2D transform to apply to all subsequent drawing operations. Default is
+ * CIwMat2D::g_Identity (i.e. no transformation).
+ * @note This functionality is not available in iw2d_lite.
+ * @param matrix The 2D transform for all subsequent drawing operations.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetTransformMatrix(const CIwMat2D& matrix);
+proc Iw2DSetTransformMatrix : CIwMat2D;
+
+/**
+ * Get the 2D transform currently used for drawing operations.
+ * @return The 2D transform for all subsequent drawing operations.
+ * @note This functionality is not available in iw2d_lite.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIwMat2D Iw2DGetTransformMatrix();
+gen Iw2DGetTransformMatrix : unit -> CIwMat2D;
+
+/**
+ * Set a 2D transform to apply to all subsequent drawing operations, using a
+ * sub-pixel translation. This allows extra positional precision.
+ * @note This functionality is not available in iw2d_lite.
+ * @param matrix The 2D transform for all subsequent drawing operations.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetTransformMatrixSubPixel(const CIwMat2D& matrix);
+proc Iw2DSetTransformMatrixSubPixel : CIwMat2D;
+
+/**
+ * Get the 2D transform currently used for drawing operations with a sub-pixel translation.
+ * If
+ * @return The 2D transform for all subsequent drawing operations.
+ * @note This functionality is not available in iw2d_lite.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIwMat2D Iw2DGetTransformMatrixSubPixel();
+gen Iw2DGetTransformMatrixSubPixel : unit -> CIwMat2D;
+
+/**
+ * Set whether Iw2D treats coordinates as pixel coordinates or sub-pixel coordinates.
+ * @param subPixel If true, coordinates will be treated as sub-pixel coordinates
+ * (i.e. 8x scale). The default is false.
+ * @note This functionality is not available in iw2d_lite.
+ */
+// void Iw2DSetSubPixelCoords(bool subPixel);
+proc Iw2DSetSubPixelCoords : bool;
+
+/**
+ * Get whether Iw2D is treating coordinates as pixel coordinates or sub-pixel coordinates.
+ * @ret true if coordinates are being treated as sub-pixel coordinates.
+ * @note This functionality is not available in iw2d_lite.
+ */
+// bool Iw2DGetSubPixelCoords();
+gen Iw2DGetSubPixelCoords : unit -> bool;
+
+
+/**
+ * Set whether Iw2D enables mipmapping for images. Mipmapping affects images rendered
+ * smaller than actual size. Disabling mipmapping sometimes gives a cleaner look, but
+ * can cause shimmering artifacts. This setting affects images as they are created.
+ * Images created from resources will not respect this value (resource templates should be
+ * used to specify mipmapping).
+ * @param mipmapping If true, images will have a mipmap chain created. The default is true.
+ * @note This functionality is not available in iw2d_lite.
+ */
+// void Iw2DSetUseMipMapping(bool mipmapping);
+proc Iw2DSetUseMipMapping : bool;
+
+/**
+ * Get whether Iw2D is creating mipmaps for images.
+ * @ret true if mipmapping is enabled
+ * @note This functionality is not available in iw2d_lite.
+ */
+// bool Iw2DGetUseMipMapping();
+gen Iw2DGetUseMipMapping : unit -> bool;
+
+/**
+ * A post-transformation callback. This callback can modify the colours and points passed in to
+ * do special effects like distortion and lighting.
+ * @note Iw2D will not typically do more modulation work than required, but will not parse the contents
+ * of pCols after this function returns. For this reason, if you require full RGB modulation you should
+ * set a drawing colour with non-matching RGB values.
+ * @note This functionality is not available in iw2d_lite.
+ * @param pPoints a pointer to a list of transformed points. Note that the points will be in
+ * sub-pixels (8*normal resolution).
+ * @param pCols a pointer to a list of colours.
+ * @param numberPoints the number of points/colours passed into the function.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// typedef void (*CIw2DPostTransformFn)(CIwSVec2* pPoints, CIwColour* pCols, int32 numberPoints);
+// TODO
+
+
+/**
+ * Set a callback function to transform position/colour dynamically. Default is NULL (i.e. no
+ * post-transformation callback).
+ * The post-transformation acts on position/colours output by iw2D before they are rendered, and can
+ * be used for lighting/distortion effects.
+ * @note This functionality is not available in iw2d_lite.
+ * @param fn The post-transformation for all subsequent drawing operations.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSetPostTransformFn(CIw2DPostTransformFn fn);
+
+/**
+ * Get the current post-transformation callback function
+ * @note This functionality is not available in iw2d_lite.
+ * @return The current post-transformation callback function
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DPostTransformFn Iw2DGetPostTransformFn();
+
+
+/** @} */
+
+/**
+ * @defgroup iw2dBasicPrimitives Basic Primitives
+ *
+ * These primitives do not require any loaded assets.
+ * Primitives are rendered to the current surface (usually the screen).
+ * They will be flat coloured with the current colour.
+ *
+ * @{
+ */
+
+
+/**
+ * Draw a fraction of an arc flat-coloured with the current colour. An arc is rendered as
+ * a series of line segments.
+ * @param centre The centre of the arc
+ * @param size The horizontal/vertical radii of the arc
+ * @param start The beginning of the arc (clockwise from directly up)
+ * @param end The end of the arc (clockwise from directly up)
+ * @param numberSegments The number of lines to draw the arc with. By default a reasonable resolution will be chosen.
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawArc(CIwSVec2 centre, CIwSVec2 size, iwangle start, iwangle end, int32 numberSegments = 0);
+proc Iw2DDrawArc : CIwSVec2 * CIwSVec2 * iwangle * iwangle * int32;
+proc Iw2DDrawArc : CIwSVec2 * CIwSVec2 * iwangle * iwangle;
+
+/**
+ * Draw a single line flat-coloured with the current colour.
+ * @param start The start of the line
+ * @param end The end of the line
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawLine(CIwSVec2 start, CIwSVec2 end);
+proc Iw2DDrawLine : CIwSVec2*CIwSVec2;
+
+/**
+ * Draw an arbitary polygon outline flat-coloured with the current colour.
+ * @param verts a pointer to a list of vertices
+ * @param numberVerts the number of vertices in the list
+ * @param closed whether a line is drawn from the final vertex to the first vertex.
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawPolygon(CIwSVec2* verts, int32 numberVerts, bool closed);
+proc Iw2DDrawPolygon : +CIwSVec2 * int32 * bool;
+
+/**
+ * Draw a rectangle outline flat-coloured with the current colour.
+ * @param topLeft The top left of the rectangle
+ * @param size The size of the rectangle
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawRect(CIwSVec2 topLeft, CIwSVec2 size);
+proc Iw2DDrawRect : CIwSVec2 * CIwSVec2;
+
+/**
+ * Draw a solid pie-segment flat-coloured with the current colour.
+ * @param centre The centre of the arc
+ * @param size The horizontal/vertical radii of the arc
+ * @param start The beginning of the arc (clockwise from directly up)
+ * @param end The end of the arc (clockwise from directly up)
+ * @param numberSegments The number of lines to draw the arc with. By default a reasonable resolution will be chosen.
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DFillArc(CIwSVec2 centre, CIwSVec2 size, iwangle start, iwangle end, int32 numberSegments = 0);
+proc Iw2DFillArc : CIwSVec2*CIwSVec2*iwangle*iwangle*int32;
+proc Iw2DFillArc : CIwSVec2*CIwSVec2*iwangle*iwangle;
+
+/**
+ * Draw an arbitary solid polygon flat-coloured with the current colour.
+ * @param verts a pointer to a list of vertices
+ * @param numberVerts the number of vertices in the list
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+//void Iw2DFillPolygon(CIwSVec2* verts, int32 numberVerts);
+proc Iw2DFillPolygon : +CIwSVec2 * int32;
+
+/**
+ * Draw a solid rectangle flat-coloured with the current colour.
+ * @param topLeft The top left of the rectangle
+ * @param size The size of the rectangle
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+//void Iw2DFillRect(CIwSVec2 topLeft, CIwSVec2 size);
+proc Iw2DFillRect : CIwSVec2 * CIwSVec2;
+
+/** @} */
+
+/**
+ * @defgroup iw2dImages Images
+ *
+ *  Images can be created from raw files, or held in the IwResManager resource system for increased
+ *  efficiency
+ *
+ *  Images should be deleted when finished with.
+ *
+ * @{
+ */
+
+/**
+ * Create a CIw2DImage from any standard image format file supported by CIwImage
+ * @param filename the file to load
+ * @return a CIw2DImage object
+ * @see CIwImage
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DImage* Iw2DCreateImage(const char* filename);
+gen Iw2DCreateImage : +char -> +CIw2DImage; 
+
+/**
+ * Create a CIw2DImage from an existing image resource
+ * @param resource the resource to use
+ * @return a CIw2DImage object
+ * @see IwResManager
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DImage* Iw2DCreateImageResource(const char* resource);
+gen Iw2DCreateImageResource : +char -> +CIw2DImage;
+
+/**
+ * Create a CIw2DImage from an existing image resource
+ * using its hashed name.
+ * @param resource the resource to use
+ * @return a CIw2DImage object
+ * @see IwResManager
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DImage* Iw2DCreateImageResource(uint32 resourceHash);
+gen Iw2DCreateImageResource : unit32 -> +CIw2DImage;
+
+
+/**
+ * Create a CIw2DImage from an existing CIwImage resource
+ * @param image the image to use
+ * @return a CIw2DImage object
+ * @see IwResManager
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DImage* Iw2DCreateImage(CIwImage& image);
+gen Iw2DCreateImageResource : CIwImage -> +CIw2DImage;
+
+/**
+ * Make a CIw2DImage from an existing surface - note that this is a live window into the
+ * surface (the contents will be updated when the surface is).
+ * @param surface the surface to use
+ * @return a CIw2DImage object
+ * @see Iw2DCreateSurface
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DImage* Iw2DCreateImage(CIw2DSurface* surface);
+gen Iw2DCreateImage : +CIw2DSurface -> +CIw2DImage;
+
+
+/**
+ * Draw an image at 1:1 size at the specified location, modulated by the current colour, using the current alphamode
+ * @param image the image to draw
+ * @param topLeft the top left position of the image on the screen
+ * @see Iw2DSetColour, Iw2DSetAlphaMode, Iw2DSetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawImage(CIw2DImage* image, CIwSVec2 topLeft);
+proc Iw2DDrawImage : +CIw2DImage * CIwSVec2;
+
+/**
+ * Draw an image stretched to arbitrary size at the specified location, modulated by the current colour, using the current alphamode
+ * @note This functionality is not available in iw2d_lite.
+ * @param image the image to draw
+ * @param topLeft the top left position of the image on the screen
+ * @param size the size of the image on the screen
+ * @see Iw2DSetColour, Iw2DSetAlphaMode, Iw2DSetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawImage(CIw2DImage* image, CIwSVec2 topLeft, CIwSVec2 size);
+proc Iw2DDrawImage : +CIw2DImage * CIwSVec2 * CIwSVec2;
+
+/**
+ * Draw a region of an image at 1:1 size at the specified location, modulated by the current colour, using the current alphamode
+ * @param image the image to draw
+ * @param topLeft the top left position of the image on the screen
+ * @param regionOffset the top left of the region within the image
+ * @param regionSize the size of the region within the image (and thus, on the screen)
+ * @see Iw2DSetColour, Iw2DSetAlphaMode, Iw2DSetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawImageRegion(CIw2DImage* image, CIwSVec2 topLeft, CIwSVec2 regionOffset, CIwSVec2 regionSize);
+proc Iw2DDrawImageRegion : +CIw2DImage * CIwSVec2^3;
+
+/**
+ * Draw a region of an image stretched to arbitrary size at the specified location, modulated by the current colour, using the current alphamode
+ * @note This functionality is not available in iw2d_lite.
+ * @param image the image to draw
+ * @param topLeft the top left position of the image on the screen
+ * @param size the size of the image on the screen
+ * @param regionOffset the top left of the region within the image
+ * @param regionSize the size of the region within the image
+ * @see Iw2DSetColour, Iw2DSetAlphaMode, Iw2DSetImageTransform
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawImageRegion(CIw2DImage* image, CIwSVec2 topLeft, CIwSVec2 size, CIwSVec2 regionOffset, CIwSVec2 regionSize);
+proc Iw2DDrawImageRegion : +CIw2DImage * CIwSVec2^4;
+
+
+/**
+ * Draw 3x3 regions of an image the corners fixed size, the sides stretching in 1 dimension the centre stretching in 2 dimensions
+ * @note This functionality is not available in iw2d_lite.
+ * @param image the image to draw
+ * @param areas this needs an array of 4 CIwSVec2's
+ *        areas[0] is the start position, areas[1] is the overall size
+ *        areas[2] is the start psition of the centre, areas[3] is the size of the centre
+ * @param regions this is an array of 18 CIwSVec2's
+ *        regions[0] is the uv offset of the image region for the top left corner of the drawn image
+ *        regions[1] is the uv size of the image region for the top left corner of the drawn image
+ *        and so on for each of the 9 regions of the image
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawImageStretch(CIw2DImage* image, CIwSVec2* areas, CIwSVec2* regions);
+proc Iw2DDrawImageRegion : +CIw2DImage * +CIwSVec2 * +CIwSVec2;
+
+/** @} */
+
+/**
+ * @defgroup iw2dFonts Fonts
+ *
+ * Iw2D supports font rendering based on IwGxFont resources.
+ *
+ * Fonts must be created from the IwResManager resource system.
+ *
+ * @see IwGxFont, IwResManager
+ *
+ * @{
+ */
+
+/**
+ * Create a CIw2DFont from an existing font resource.
+ * The created font will be set as the current font for drawing.
+ * @param resource the resource to use
+ * @return a CIw2DFont object
+ * @see IwResManager
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DFont* Iw2DCreateFontResource(const char* resource);
+gen Iw2DCreateFontResource : +char -> +CIw2DFont;
+
+/**
+ * Create a CIw2DFont from a .GXFONT file. On Win32 debug builds this
+ * will produce a binary version of the font (a .GXFONT.BIN file) and
+ * load that. The ARM build will only use the GXFONT.BIN file.
+ * The created font will be set as the current font for drawing.
+ * @param filename the font to use
+ * @return a CIw2DFont object
+ * @see IwResManager
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DFont* Iw2DCreateFont(const char* filename);
+gen Iw2DCreateFont : +char -> +CIw2DFont;
+
+cenum CIw2DFontAlign =
+    IW_2D_FONT_ALIGN_TOP,
+    IW_2D_FONT_ALIGN_LEFT,
+    IW_2D_FONT_ALIGN_CENTRE,
+    IW_2D_FONT_ALIGN_BOTTOM,
+    IW_2D_FONT_ALIGN_RIGHT,
+;
+
+/**
+ * Draw a (utf8 encoded) string in the specified rectangle
+ * @param string a utf8 encoded string to draw
+ * @param topLeft the top left corner of the text region
+ * @param size the size of the text region
+ * @param horzAlign the horizontal alignment of the text within the region
+ * @param vertAlign the vertical alignment of the text within the region
+ * @see Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawString(const char* string, CIwSVec2 topLeft, CIwSVec2 size, CIw2DFontAlign horzAlign, CIw2DFontAlign vertAlign);
+proc Iw2DDrawString : +char * CIwSVec2 * CIwSVec2 * CIw2DFontAlign * CIw2DFontAlign;
+
+/**
+ * Draw a (UCS-2 encoded) string in the specified rectangle
+ * @param string a UCS-2 encoded string to draw
+ * @param topLeft the top left corner of the text region
+ * @param size the size of the text region
+ * @param horzAlign the horizontal alignment of the text within the region
+ * @param vertAlign the vertical alignment of the text within the region
+ * @see Iw2DSetFont, Iw2DSetColour, Iw2DSetAlphaMode
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DDrawString(uint16* string, CIwSVec2 topLeft, CIwSVec2 size, CIw2DFontAlign horzAlign, CIw2DFontAlign vertAlign);
+proc Iw2DDrawString : +uint16 * CIwSVec2 * CIwSVec2 * CIw2DFontAlign * CIw2DFontAlign;
+
+
+/**
+ * Get the width of the specified string in the current font
+ * @param string a utf8 encoded string to draw
+ * @return The width of the specified string in the current font
+ * @see Iw2DSetFont
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// int32 Iw2DGetStringWidth(const char* string);
+gen Iw2DGetStringWidth : +char -> int32;
+
+/**
+ * Get the width of the specified string in the current font
+ * @param string a UCS-2 encoded string to draw
+ * @return The width of the specified string in the current font
+ * @see Iw2DSetFont
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// int32 Iw2DGetStringWidth(uint16* string);
+gen Iw2DGetStringWidth : +uint16 -> int32;
+
+
+/** @} */
+
+/**
+ * @defgroup iw2dMisc Miscellaneous Functions
+ * @{
+ */
+
+
+/**
+ * Initialise the Iw2D module. This function must be called prior to any others.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DInit();
+proc Iw2DInit : unit;
+
+
+/**
+ * Terminate the Iw2D module. This function must be called prior to shutdown.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DTerminate();
+proc Iw2DTerminate : unit;
+
+/**
+ * Finish any pending drawing. This can be used to guarantee drawing order between Iw2D and other modules.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+//void Iw2DFinishDrawing();
+proc Iw2DFinishDrawing : unit;
+
+/**
+ * Finish any pending drawing and present the surface. The default surface must be the current drawing surface.
+ * This function must be called instead of other Show() functions like s3eSurfaceShow() and IwGxSwapBuffers().
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSurfaceShow();
+proc Iw2DSurfaceShow : unit;
+
+/**
+ * Clear the current surface to the specified colour.
+ * @param c the colour to clear to
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DSurfaceClear(CIwColour c);
+// void Iw2DSurfaceClear(uint32 c);
+proc Iw2DSurfaceClear : CIwColour;
+proc Iw2DSurfaceClear : uint32;
+
+/**
+ * Retrieve details of the current surface
+ * @param outInfo an s3eSurfaceInfo structure to receive the details. Note that in gl mode only the width and
+ * height will be filled out.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// void Iw2DGetSurfaceInfo(s3eSurfaceInfo& outInfo);
+// TODO
+
+/**
+ * Get the width of the current surface
+ * @return The width of the current surface
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// int32 Iw2DGetSurfaceWidth();
+gen Iw2DGetSurfaceWidth : unit -> int32;
+
+/**
+ * Get the height of the current surface
+ * @return The height of the current surface
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// int32 Iw2DGetSurfaceHeight();
+gen Iw2DGetSurfaceHeight : unit -> int32;
+
+
+/**
+ * Create a destination surface of the specified size
+ * @param w the width of the surface to create
+ * @param h the height of the surface to create
+ * @return A surface object. This should be deleted when the surface is finished with.
+ * @par Required Header Files
+ * Iw2D.h
+ */
+// CIw2DSurface* Iw2DCreateSurface(int32 w, int32 h);
+gen Iw2DCreateSurface : int32 * int32 -> +CIw2DSurface;
+
+
+}

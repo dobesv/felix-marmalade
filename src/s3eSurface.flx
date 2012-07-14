@@ -1,0 +1,749 @@
+/*
+ * Copyright (C) 2001-2012 Ideaworks3D Ltd.
+ * All Rights Reserved.
+ *
+ * This document is protected by copyright, and contains information
+ * proprietary to Ideaworks Labs.
+ * This file consists of source code released by Ideaworks Labs under
+ * the terms of the accompanying End User License Agreement (EULA).
+ * Please do not use this program/source code before you have read the
+ * EULA and have agreed to be bound by its terms.
+ */
+
+include "s3eTypes";
+
+class s3eSurface {
+
+header "#include <s3eSurface.h>";
+
+open s3eTypes;
+
+/**
+ * @addtogroup s3egroup
+ * @{
+ */
+
+/**
+ * @defgroup surfaceapigroup S3E Surface API Reference
+ *
+ * @platnote{ios} Due to the way surface access is implemented in official
+ * iOS APIs, rendering via S3E Surface (s3eSurfacePtr(), s3eSurfaceShow(),
+ * s3eDebugPrint(), etc.) runs noticeably slowly on iOS. The slowdown is
+ * especially obvious on the iPad due to its high resolution screen with a
+ * comparatively slow CPU. It is therefore recommended to only use hardware
+ * rendering (GLES, IwGL, IwGx, etc.) on iOS.
+ * @platnote{lgtv} Due to the way software surface access is implemented in LG
+ * TV APIs, rendering via Marmalade's S3E Surface APIs runs noticeably slowly
+ * on LG TV. There is also a long latency between drawing to the surface and
+ * the result being displayed. Using S3E Surface involves getting the surface
+ * with s3eSurfacePtr(), rendering with s3eSurfaceShow() and debugging
+ * functions like s3eDebugPrint(). It is therefore recommended to only use
+ * hardware rendering (GLES, IwGL, IwGx, etc.) for rendering on LG TV. In
+ * practice, the need to use S3E Surface is unlikely beyond building test apps.
+ *
+ * For more information on the Surface functionality provided by the S3E
+ * module, see the "S3E Surface Overview" section of the
+ * <em>S3E API Documentation</em>.
+ * @{
+ */
+
+/**
+ * Surface pixel types.
+ * Pixel type is represented as 32-bit bitmap with the following layout:
+ * bits 1-4   : color fomat   : 555, 888, etc
+ * bits 5-7   : pixel size    : 8-bit - 32-bit
+ * bits 8-12  : color order   : BGR vs RGB
+ * @par Required Header Files
+ * s3eSurface.h
+ */
+/** Pixel size is one byte */
+const S3E_SURFACE_PIXEL_SIZE_8:uint ;
+/** Pixel size is two bytes */
+const S3E_SURFACE_PIXEL_SIZE_16:uint ;
+/** Pixel size is three bytes */
+const S3E_SURFACE_PIXEL_SIZE_24:uint ;
+/** Pixel size is four bytes */
+const S3E_SURFACE_PIXEL_SIZE_32:uint ;
+// \cond HIDDEN_DEFINES
+const S3E_SURFACE_PIXEL_SIZE_MASK:uint ;
+// \endcond
+/**
+ * Pixel data is stored with the red colour component in the most significant
+ * bits, and blue in the least significant bits
+ */
+const S3E_SURFACE_PIXEL_ORDER_RGB:uint ;
+/**
+ * Pixel data is stored with the red colour component in the least significant
+ * bits, and blue in the most significant bits
+ */
+const S3E_SURFACE_PIXEL_ORDER_BGR:uint;
+
+/** Pixel data is 4 bits per colour, RRRRGGGGBBBB or BBBBGGGGRRRR */
+const S3E_SURFACE_PIXEL_TYPE_444:uint ;
+/** Pixel data is 5 bits red, 6 bits green, 5 bits blue, RRRRRGGGGGGBBBBB or BBBBBGGGGGGRRRRR */
+const S3E_SURFACE_PIXEL_TYPE_565:uint ;
+/** Pixel data is 5 bits per colour channel, RRRRRGGGGGBBBBB or BBBBBGGGGGRRRRR */
+const S3E_SURFACE_PIXEL_TYPE_555:uint ;
+/** Pixel data is 6 bits per colour channel, RRRRRRGGGGGGBBBBBB or BBBBBBGGGGGGRRRRRR */
+const S3E_SURFACE_PIXEL_TYPE_666:uint ;
+/** Pixel data is 8 bits per colour channel, RRRRRRRRGGGGGGGGBBBBBBBB or BBBBBBBBGGGGGGGGRRRRRRRR */
+const S3E_SURFACE_PIXEL_TYPE_888:uint ;
+/** Pixel data is 5 bits red, 5 bits green, 5 bits blue and 1 bit ignored, RRRRRGGGGGGBBBBBX or BBBBBGGGGGGRRRRRX */
+const S3E_SURFACE_PIXEL_TYPE_5551:uint ;
+/** Pixel data is 8 bits ignored, 8 bits red, 8 bits green, 8 bits blue */
+const S3E_SURFACE_PIXEL_TYPE_X888:uint ;
+// \cond HIDDEN_DEFINES
+const S3E_SURFACE_PIXEL_TYPE_MASK:uint ;
+// \endcond
+
+/**
+ * Surface pixel types.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+cenum s3eSurfacePixelType =
+    S3E_SURFACE_PIXEL_TYPE_RGB444,
+    S3E_SURFACE_PIXEL_TYPE_RGB555,
+    S3E_SURFACE_PIXEL_TYPE_RGB5551,
+    S3E_SURFACE_PIXEL_TYPE_RGB565,
+    S3E_SURFACE_PIXEL_TYPE_RGB666,
+    S3E_SURFACE_PIXEL_TYPE_RGB888,
+    S3E_SURFACE_PIXEL_TYPE_RGB888_3B,
+    S3E_SURFACE_PIXEL_TYPE_XRGB888,
+
+    S3E_SURFACE_PIXEL_TYPE_BGR444,
+    S3E_SURFACE_PIXEL_TYPE_BGR555,
+    S3E_SURFACE_PIXEL_TYPE_BGR5551,
+    S3E_SURFACE_PIXEL_TYPE_BGR565,
+    S3E_SURFACE_PIXEL_TYPE_BGR666,
+    S3E_SURFACE_PIXEL_TYPE_BGR888,
+    S3E_SURFACE_PIXEL_TYPE_BGR888_3B,
+    S3E_SURFACE_PIXEL_TYPE_XBGR888
+;
+
+/**
+ * Surface blit directions.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+cenum s3eSurfaceBlitDirection =
+    //! No rotation.
+    S3E_SURFACE_BLIT_DIR_NORMAL ,
+
+    //! 90 degrees clockwise rotation copying from source to destination.
+    S3E_SURFACE_BLIT_DIR_ROT90  ,
+
+    //! 180 degrees rotation copying from source to destination.
+    S3E_SURFACE_BLIT_DIR_ROT180 ,
+
+    //! 270 degrees clockwise rotation copying from source to destination.
+    S3E_SURFACE_BLIT_DIR_ROT270 ,
+
+    //! For use with s3eSurfaceSetup; This prevents any rotated copy occurring
+    //! during s3eSurfaceShow
+    S3E_SURFACE_BLIT_DIR_NATIVE 
+;
+
+/**
+ * Surface information.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+cstruct s3eSurfaceInfo
+{
+    //! Width of surface.
+    m_Width:uint32;
+    //! Height of surface.
+    m_Height:uint32;
+    //! Pitch of surface.
+    m_Pitch:uint32;
+    //! Pixel type of surface. This can be any of those listed as part of s3eSurfacePixelType.
+    m_PixelType:s3eSurfacePixelType;
+    //! Pointer to surface data area.
+    m_Data:+void;
+};
+
+/**
+ * Clears the entire surface to a given R, G, B colour
+ */
+// S3E_EAPI void s3eSurfaceClear(uint8 r, uint8 g, uint8 b);
+proc s3eSurfaceClear : uint8^3;
+proc s3eSurfaceClear : int^3;
+
+/**
+ * Clears the entire surface to a specific byte value.  This is esentially
+ * a memset operation per row.   A memset of the entire surface won't work
+ * since row size is not always identical to pitch.
+ */
+//S3E_EAPI void s3eSurfaceBlank(uint8 bitpattern);
+proc s3eSurfaceBlank : uint8;
+
+/**
+ * Surface Properties.
+ * @see s3eSurfaceGetInt
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+cenum s3eSurfaceProperty =
+    //! [read] The width of the surface for this s3e application.
+    //! Only differs from <code>S3E_SURFACE_DEVICE_WIDTH</code> if a rotation is required for a normal display.
+    //! This value may change on a call to s3eSurfaceShow, so it should not
+    //! be permanently cached by the application.
+    S3E_SURFACE_WIDTH,
+
+    //! [read] The height of the surface for this s3e application.
+    //!Only differs from <code>S3E_SURFACE_DEVICE_HEIGHT</code> if a rotation is required for a normal display.
+    //! This value may change on a call to s3eSurfaceShow, so it should not
+    //! be permanently cached by the application.
+    S3E_SURFACE_HEIGHT,
+
+    //! [read] The number of bytes between the start of one pixel row and the next for the current surface. This defaults to <code>S3E_SURFACE_DEVICE_PITCH</code>.
+    S3E_SURFACE_PITCH,
+
+    //! [read] An @ref s3eSurfacePixelType specifying the current surface pixel type, this defaults to <code>S3E_SURFACE_DEVICE_PIXEL_TYPE</code>.
+    S3E_SURFACE_PIXEL_TYPE,
+
+    //! [read] The width of the native display for this s3e application.
+    S3E_SURFACE_DEVICE_WIDTH,
+
+    //! [read] The height of the native display for this s3e application.
+    S3E_SURFACE_DEVICE_HEIGHT,
+
+    //! [read] An @ref s3eSurfacePixelType specifying the native device pixel type.
+    S3E_SURFACE_DEVICE_PIXEL_TYPE,
+
+    //! [read] The number of bytes between the start of one pixel row and the next for the device's native display.
+    S3E_SURFACE_DEVICE_PITCH,
+
+    //! [read] Returns one of @ref s3eSurfaceBlitDirection specifying
+    //! the current display orientation of the surface. This is the last value passed
+    //! as the @e blitDirection parameter to s3eSurfaceSetup, and will always be set to
+    //! S3E_SURFACE_BLIT_DIR_NORMAL on startup.
+    S3E_SURFACE_BLIT_DIRECTION,
+
+    //! [read] Return the id of the current display. Default value is 0.
+    S3E_SURFACE_DISPLAY,
+
+    //! [read] Return the number of available displays. @ref s3eSurfaceSetDisplayID()
+    //! will succeed with values from 0 to @ref S3E_SURFACE_NUM_DISPLAYS.
+    S3E_SURFACE_NUM_DISPLAYS,
+
+    //! [read] Returns the @ref s3eSurfaceBlitDirection which should be applied when copying
+    //! directly to the device surface, in order for the application to be displayed
+    //! with the correct screen rotation. This is useful if S3E_SURFACE_BLIT_DIR_NATIVE
+    //! has been passed to s3eSurfaceSetup whereupon the application should apply this rotation
+    //! to its graphics in order to achieve a normal upright display.
+    //! This property will change if the device screen rotates (e.g. flipping
+    //! between 'landscape' or 'portrait' modes).
+    //! See @ref s3eSurfaceSetup for more information on handling screen rotation.
+    S3E_SURFACE_DEVICE_BLIT_DIRECTION,
+
+    //! [read] The width of the native display for this s3e application, quantised.
+    //!
+    //! This will return the the first value in the following list that is greater
+    //! than or equal to the current device width:-
+    //! 128, 176, 208, 220, 240, 288, 320, 352, 416, 480, 512, 540, 600, 640, 768,
+    //! 800, 960, 1024, 1152, 1280.
+    //!
+    //! A device width higher than 1280 will not be quantised  - this property will
+    //! return the device width in this case.
+    S3E_SURFACE_DEVICE_WIDTH_QUANTISED,
+
+    //! [read] The height of the native display for this s3e application, quantised.
+    //!
+    //! This will return the the first value in the following list that is greater
+    //! than or equal to the current device height:-
+    //! 128, 176, 208, 220, 240, 288, 320, 352, 416, 480, 512, 540, 600, 640, 768,
+    //! 800, 960, 1024, 1152, 1280.
+    //!
+    //! A device height higher than 1280 will not be quantised - this property will
+    //! return the device height in this case.
+    S3E_SURFACE_DEVICE_HEIGHT_QUANTISED,
+    
+    //! [read, write] The lockage type for surface orientation. 
+    //!
+    //! This return one of the @ref s3eSurfaceOrientationLock enum.
+    //!
+    //! @remark
+    //! When application starts it reads the initial Orientation Lock value from ICF DispFixRot parameter.
+    //! You can use @ref s3eSurfaceSetInt in order to change initial Orientation Lock value.
+    //! If new Orientation Lock value doesn't allow current screen orientation, screen will be rotated 
+    //! after call to s3eSetSurfaceOrientationLock. Important to know that rotation may occur asynchronously, 
+    //! on next DeviceYield.
+    //!
+    //! @see s3eSurfaceOrientationLock
+    S3E_SURFACE_DEVICE_ORIENTATION_LOCK
+;
+
+/**
+ * Retrieves an integer property for this subdevice.
+ * @param property property to get.
+ * @return
+ * - The value of the requested property if @e property is valid.
+ * - -1 otherwise.\n
+ *         Call s3eSurfaceGetError() to retrieve an error code.
+ *         This will return:
+ *   - @ref S3E_SURFACE_ERR_PARAM if @e property is not valid.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API int32 s3eSurfaceGetInt(s3eSurfaceProperty property);
+gen s3eSurfaceGetInt : s3eSurfaceProperty -> int32 ;
+
+/**
+ * Sets an integer property for this subdevice.
+ * @param property property to set.
+ * @param val property value to set.
+ * 
+ * @return
+ * - S3E_RESULT_SUCCESS on success
+ * - S3E_RESULT_ERROR otherwise
+ *         Call s3eSurfaceGetError() to retrieve an error code.
+ *         This will return:
+ *    - @ref S3E_SURFACE_ERR_PARAM if @e property is not valid.
+ *    - @ref S3E_SURFACE_ERR_DEVICE if error caused by device specific error.
+ */
+ // S3E_API s3eResult s3eSurfaceSetInt(s3eSurfaceProperty property, int32 val);
+gen s3eSurfaceGetInt : s3eSurfaceProperty*int32 -> s3eResult ;
+
+/**
+ * Surface Orientation.
+ * When the display size or orientation has changed
+ * the callback notification (@ref S3E_SURFACE_SCREENSIZE) receives a pointer
+ * to an object of this type.
+ *
+ * This callback will come from a call to s3eSurfaceShow() or eglSwapBuffers() if
+ * the application is using GLES.
+ */
+cstruct s3eSurfaceOrientation
+{
+    m_OrientationChanged:bool                 ;  ///< True if orientation has changed
+    m_Width:uint32                  ;               ///< New user surface width
+    m_Height:uint32                  ;              ///< New user surface height
+    m_DeviceBlitDirection:s3eSurfaceBlitDirection ; ///< New device blit direction
+    m_Pitch:uint32                  ;               ///< New user surface pitch
+} ;
+
+/**
+ * Surface Callbacks.
+ * The following callback types can be registered to enable user notification
+ * of surface events.
+ * @see s3eSurfaceRegister, s3eSurfaceUnRegister
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+cenum s3eSurfaceCallback =
+    /**
+     * Copyup callback. This callback is called from @ref s3eSurfaceShow.
+     *
+     * Any callback created to respond to this event should conform to the
+     * following:
+     *
+     * @param systemData This is an instance of @ref s3eSurfaceCopyupInfo.
+     * @return The callback function should return 1 if copy was performed, and
+     * 0 if copy did not occur and system copyup should take place. For more
+     * information, see s3eSurfaceCopyupInfo.
+     */
+    S3E_SURFACE_COPYUP,
+
+    /**
+     * Called when screen size or orientation has changed. This callback is
+     * called from within @ref s3eDeviceYield.
+     *
+     * Any callback created to respond to this event should conform to the
+     * following:
+     *
+     * @param systemData This is an instance of @ref s3eSurfaceOrientation.
+     * @return No return value is expected from a callback registered using
+     * this enumeration.
+     */
+    S3E_SURFACE_SCREENSIZE,
+    
+    S3E_SURFACE_CALLBACK_MAX
+;
+
+/**
+ * This is the system parameter supplied to the copyup callback function.
+ * @remark  This callback is called when the system is about to display the
+ * current surface.
+ * This callback should copy the data from @a m_SrcSurface to @a m_DestSurface,
+ * performing any necessary pitch and colour conversion, as well as any desired
+ * post-processing effects.
+ *
+ * @remark  If s3eSurfaceSetup() has not been called - i.e. the s3eSurfacePtr()
+ * returns the current
+ * display surface in its native format - then this callback will still be
+ * called, but with @a m_SrcSurface == @a m_DestSurface (the same surface as
+ * returned by @ref s3eSurfacePtr())
+ * If s3eSurfaceSetup() has been called with a specified user surface pointer,
+ * then it is guaranteed that @a m_SrcSurface != @a m_DestSurface.
+ * @a blitDirection must be noted, if a 90 degree rotation is specified then it
+ * should be assumed that the destination surface is a rotated version of the
+ * current surface, and it will therefore have its width and height swapped.
+ * The callback function should return 1 if copy was performed, and 0 if copy
+ * did not occur and system copyup should take place.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+cstruct s3eSurfaceCopyupInfo
+{
+    //! Source surface information. This is the surface from which data is to be copied.
+    m_SrcSurface:s3eSurfaceInfo          ;
+    //! Destination surface information. This is the surface to which data is to be copied.
+    m_DestSurface:s3eSurfaceInfo          ;
+    //! X-coordinate of rectangle to be copied to on the destination surface.
+    m_X:uint32                  ;
+    //! Y-coordinate of rectangle to be copied to on the destination surface.
+    m_Y:uint32                  ;
+    //! Width of rectangle to be copied to on the destination surface.
+    m_Width:uint32                  ;
+    //! Height of rectangle to be copied to on the destination surface.
+    m_Height:uint32                  ;
+    //! Blit-direction information.
+    m_BlitDirection:s3eSurfaceBlitDirection ;
+} ;
+
+/**
+ * Registers a callback for a given event.
+ * The available callback types are listed in @ref s3eSurfaceCallback.
+ * @param cbid ID of the callback for which to register.
+ * @param fn callback function.
+ * @param userData Value to pass to the @e userData parameter of @e fn.
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred.
+ * - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *         Call s3eSurfaceGetError() to retrieve an error code.
+ *         This will return one of:
+ *   - @ref S3E_SURFACE_ERR_PARAM if @e cbid is not a valid member of @ref s3eSurfaceCallback or @e fn is NULL.
+ *   - @ref S3E_SURFACE_ERR_TOO_MANY If the maximum number of callbacks for this device has been exceeded.
+ *   - @ref S3E_SURFACE_ERR_ALREADY_REG If a function has already been registered for the S3E_SURFACE_COPYUP callback.
+ *
+ * @remark This can be used to register a function for the @ref
+ * S3E_SURFACE_COPYUP or @ref S3E_SURFACE_SCREENSIZE callback.
+ * @see s3eSurfaceUnRegister
+ * @note For more information on the @a systemData passed as a parameter to the
+ * callback registered using this function, see the @ref s3eSurfaceCallback enum.
+ * @note A callback return value is only expected from a @ref
+ * S3E_SURFACE_COPYUP callback function.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API s3eResult s3eSurfaceRegister(s3eSurfaceCallback cbid, s3eCallback fn, void* userData);
+gen s3eSurfaceRegister : s3eSurfaceCallback * s3eCallback * +void -> s3eResult ;
+
+/**
+ * Unregister a callback for a given event.
+ * @param cbid ID of the callback for which to register.
+ * @param fn Callback Function.
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred.
+ * - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *         Call s3eSurfaceGetError() to retrieve an error code.
+ *         This will return one of:
+ *   - @ref S3E_SURFACE_ERR_PARAM if @e cbid is not a valid member of @ref s3eSurfaceCallback.
+ *   - @ref S3E_SURFACE_ERR_NOT_FOUND if @e fn is not registered for callback @e cbid.
+ *
+ * @remark This can be used to unregister functions for the @ref S3E_SURFACE_COPYUP callback.
+ * @see s3eSurfaceRegister
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API s3eResult s3eSurfaceUnRegister(s3eSurfaceCallback cbid, s3eCallback fn);
+gen s3eSurfaceUnRegister : s3eSurfaceCallback * s3eCallback -> s3eResult ;
+
+/**
+ * Surface Errors.
+ * @see s3eSurfaceGetError
+ * @see s3eSurfaceGetErrorString
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+cenum s3eSurfaceError =
+    S3E_SURFACE_ERR_NONE        ,    ///< No Error.
+    S3E_SURFACE_ERR_PARAM       ,    ///< Invalid parameter.
+    S3E_SURFACE_ERR_TOO_MANY    ,    ///< Maximum number of callbacks exceeded.
+    S3E_SURFACE_ERR_ALREADY_REG ,    ///< The specified callback is already registered.
+    S3E_SURFACE_ERR_NOT_FOUND   ,    ///< The specified callback was not found for removal.
+    S3E_SURFACE_ERR_DEVICE      ,    ///< The underlying file device failed.
+    S3E_SURFACE_ERR_MEM              ///< Out of operating system memory during operation.
+;
+
+/**
+ * Retrieves the last error, if any, for this subdevice.
+ * @see s3eSurfaceGetErrorString
+ *
+ * @remark Calling this function will retrieve the last error and then remove it
+ * from memory; therefore, any further calls to this function will not return
+ * an error unless a subsequent error has occurred.
+ *
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API s3eSurfaceError s3eSurfaceGetError();
+gen s3eSurfaceGetError : 1 -> s3eSurfaceError ;
+
+/**
+ * Retrieves the last error as a string, if any, for this subdevice. This is
+ * only available in debug builds.
+ * @see s3eSurfaceGetError
+ *
+ * @remark This function, as opposed to s3eSurfaceGetError(), will always return
+ * the last error no matter how many times it is called. This function should not be
+ * relied upon to indicate whether an error has just occurred.
+ *
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API const char* s3eSurfaceGetErrorString();
+gen s3eSurfaceGetErrorString : 1 -> +char ; 
+
+/**
+ * Gets the current surface data pointer.
+ * @return Pointer to the surface data. This is guaranteed to be non-NULL.
+ *
+ * @remark The pointer returned is in the format as defined by the surface
+ * properties: <code>S3E_SURFACE_PITCH</code>, <code>S3E_SURFACE_WIDTH</code>,
+ * <code>S3E_SURFACE_HEIGHT</code> and <code>S3E_SURFACE_PIXELTYPE</code>.
+ *
+ * @remark If a surface pointer in a different pixel format or pitch is
+ * desired, then call s3eSurfaceSetup() before calling s3eSurfacePtr().
+ * This pointer will remain constant between the current point of execution and
+ * s3eSurfaceShow().
+ *
+ * @note After s3eSurfaceShow(), the result returned by s3eSurfacePtr() may
+ * change, so the result of s3eSurfacePtr() should never be stored by the user
+ * application across a call to s3eSurfaceShow().
+ *
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API void* s3eSurfacePtr();
+gen s3eSurfacePtr : 1 -> +void ;
+
+/**
+ * Displays the current surface to the device screen.
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred.
+ * - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *         Call @ref s3eSurfaceGetError() to retrieve an error code.
+ *         This will return one of:
+ *   - @ref S3E_SURFACE_ERR_DEVICE if displaying the surface failed due to operating system specific reasons
+ *
+ * @remark The display surface is written to screen quickest when it has not
+ * been converted from its native format to another, using the
+ * s3eSurfaceSetup() function.
+ * If s3eSurfaceSetup() has established a surface of a different format away
+ * from the display area, either via a user surface pointer or by
+ * specifying a pixel format different to that of the display, then
+ * s3eSurfaceShow() will perform an additional copying step.
+ *
+ * If the device changes display orientation then s3eSurfaceShow will cause
+ * a surface rotation to be imposed, possibly swapping the width and height
+ * of the surface. Thus screen dimensions should not be stored over a call
+ * to s3eSurfaceShow. The same rule applies to the pointer returned by
+ * s3eSurfacePtr(). See @ref s3eSurfaceSetup for more information on handling
+ * surface rotation.
+ *
+ * @remark The @ref S3E_SURFACE_COPYUP callback will always be called, and it
+ * provides the user with the ability to change the copying stage if
+ * desired.
+ * @see s3eSurfaceSetup
+ * @see s3eCopyupCB
+ * @see s3eSurfacePtr
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API s3eResult s3eSurfaceShow();
+gen s3eSurfaceShow : unit -> s3eResult ;
+
+/**
+ * Reformats the current surface to the specified format.
+ * @param pixelType New surface format or pixel type ((s3eSurfacePixelType)-1 for default).
+ * @param pitch  New surface pitch (0 for any default pitch).
+ * @param ptr    New surface pixel store (NULL for device display pixel store).
+ * @param blitDirection Desired rotation to apply to surface before display.
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred.
+ * - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *         Call @ref s3eSurfaceGetError() to retrieve an error code.
+ *         This will return:
+ *   - @ref S3E_SURFACE_ERR_PARAM if @e pixelType is invalid,
+ *                                if @e pitch is nonzero but less than surface width * @e pixelType byte size,
+ *                                if @e pitch is not a multiple of the @e pixelType byte size
+ *                                or if @e blitDirection is invalid
+ *   - @ref S3E_SURFACE_ERR_MEM if S3E could not allocate memory from the underlying OS to create a surface.
+ *   - @ref S3E_SURFACE_ERR_DEVICE if the underlying graphics facilities from the host OS failed during surface creation.
+ *
+ * @remark  This creates a new surface and changes the format of the data
+ * returned by s3eSurfacePtr() to the new format specified.
+ * By default the surface provided via s3eSurfacePtr() is a 565 format surface
+ * This function provides a way of creating different format surfaces from the
+ * default.
+ *
+ * @remark  If ptr == NULL then S3E attempts to use any existing device-level
+ * surface to match the pixel format and pitch specified.
+ * If a device-level surface is used then s3eSurfaceShow() will not require
+ * an extra copying stage, improving performance.
+ * Therefore calling <code>s3eSurfaceSetup(pixelType, 0, NULL, S3E_SURFACE_BLIT_DIR_NORMAL)</code>
+ * will provide the optimum surface with the specified pixel format, for example,
+ * <code>s3eSurfaceSetup(S3E_SURFACE_PIXEL_TYPE_RGB565, 0, NULL, S3E_SURFACE_BLIT_DIR_NORMAL)</code>
+ * will guarantee a surface that has 565 pixel format. In this case if the device does
+ * not support rendering an 565 screen natively, S3E will create an off-screen surface
+ * and perform an extra copying step when s3eSurfaceShow() is called to convert the
+ * pixel format from 565 to the native type.
+ *
+ * @remark  If ptr != NULL then s3e will always copy and, if necessary,
+ * format-convert between the surface pointed to by ptr and the display
+ * whenever s3eSurfaceShow() is called. This can be useful if the user wishes
+ * to override the copying stage via the <code>S3E_SURFACE_COPYUP</code> callback.
+ *
+ * If <code>blitDirection != S3E_SURFACE_BLIT_DIR_NORMAL</code> then the surface
+ * will be rotated so that it appears on the screen at the angle specified
+ * by blitDirection. Note that changing blitDirection may affect the dimensions
+ * of the surface, as for 90 and 270 degree rotations, width and height will be swapped.
+ *
+ * Some devices require a surface rotation in order to produce an upright display.
+ * e.g. in cases where the LCD screen is mounted 'sideways' on the device.
+ * S3E handles this automatically so that the surface is always displayed
+ * according to blitDirection.
+ *
+ * However performing the rotation is time-consuming and the user application
+ * may wish to handle the rotation itself (e.g. by drawing rotated polygons).
+ * To do this, specify S3E_SURFACE_BLIT_DIR_NATIVE for blitDirection. This
+ * will guarantee that S3E performs no surface rotation during s3eSurfaceShow.
+ *
+ * The application will then wish to know what rotation to apply to its graphics.
+ * This can be obtained through calling
+ * <code>s3eSurfaceGetInt(S3E_SURFACE_DEVICE_BLIT_DIRECTION)</code> which will
+ * return a s3eSurfaceBlitDirection.
+ *
+ * Some devices can change the rotation required for an upright display by
+ * e.g. flipping from 'portrait' mode to 'landscape' mode. Normally S3E
+ * will handle this by default and cause an orientation (and possibly
+ * surface dimension) change on the next call to s3eSurfaceShow.
+ *
+ * However this behaviour is disabled if S3E_SURFACE_BLIT_DIR_NATIVE has been
+ * used for blitDirection. In this case the user should have registered a
+ * callback to be notified about changes in surface orientation, via
+ * <code>s3eSurfaceRegister(S3E_SURFACE_SCREEN_SIZE)</code>
+ * The user then should read the new required rotation (the
+ * m_DeviceBlitDirection passed in he callback data) and apply it to the
+ * application graphics.
+ *
+ *
+ * @remark s3eSurfaceSetup() does not affect the video, which will be played in the native (default) view.
+ *
+ * @note Although S3E guarantees the ability to create and display a surface of any
+ * pixel format and orientation, it does not guarantee high performance copying routines for
+ * all pixel formats. Hence use of some pixel types will incur a significant performance
+ * penalty during s3eSurfaceShow(). @ref S3E_SURFACE_PIXEL_TYPE_RGB565 is the only pixel
+ * type that is guaranteed to have a high-performance copying routine, so if the native
+ * pixel format is not desired it is recommended that @ref S3E_SURFACE_PIXEL_TYPE_RGB565 is
+ * used.
+ *
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API s3eResult s3eSurfaceSetup(s3eSurfacePixelType pixelType, uint32 pitch S3E_DEFAULT(0), void* ptr S3E_DEFAULT(NULL), s3eSurfaceBlitDirection blitDirection S3E_DEFAULT(S3E_SURFACE_BLIT_DIR_NORMAL));
+gen s3eSurfaceSetup : s3eSurfacePixelType * uint32 * +void * s3eSurfaceBlitDirection -> s3eResult ;
+gen s3eSurfaceSetup : s3eSurfacePixelType * uint32 * +void -> s3eResult ;
+gen s3eSurfaceSetup : s3eSurfacePixelType * uint32 -> s3eResult ;
+gen s3eSurfaceSetup : s3eSurfacePixelType -> s3eResult ;
+
+/**
+ * Invalidates a given area of the display surface.
+ * @param x Left coordinate of invalidation rectangle.
+ * @param y Top coordinate of invalidation rectangle.
+ * @param dx Invalidation rectangle width.
+ * @param dy Invalidation rectangle height.
+ *
+ * @remark This function serves as a hint to the system that only the specified surface
+ * rectangle requires updating. This can potentially provide performance
+ * increases on some platforms.
+ *
+ * @remark If s3eSurfaceInvalidate() is not called before s3eSurfaceShow(),
+ * then s3eSurfaceShow() will always update the entire screen. If
+ * s3eSurfaceInvalidate() is called before s3eSurfaceShow(), s3eSurfaceShow()
+ * will update the screen according to the cumulative area indicated by calls
+ * to s3eSurfaceInvalidate().  The invalid area of the screen is reset when
+ * s3eSurfaceShow() is called.
+ *
+ * @note This function is only a hint; therefore, there is no guarantee that the rest
+ * of the screen will not be updated at the same time as the invalidated rectangle.
+ * This function should only be used to increase performance and @e not to control
+ * the screen display. It is expected that the screen outside the rectangle specified
+ * is not changed.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API void s3eSurfaceInvalidate(int32 x, int32 y, int32 dx, int32 dy);
+proc s3eSurfaceInvalidate : int32^4 ;
+
+
+/**
+ * Converts RGB value to surface native pixel format.
+ * @param r R component of colour to convert in the range 0-255.
+ * @param g G component of colour to convert in the range 0-255.
+ * @param b B component of colour to convert in the range 0-255.
+ * @return Colour value in current surface native pixel format, 0-extended to 32 bits.
+ *
+ * @remark This function converts a RGB value to data that can be be written to the frame buffer
+ * returned by s3eSurfacePtr()
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API uint32 s3eSurfaceConvertRGB(uint8 r, uint8 g, uint8 b);
+fun s3eSurfaceConvertRGB : uint8^3 -> uint32 ;
+
+/**
+ * Support for multiple displays. This function sets the screen to which surfaces are output.
+ * @param id Display ID (0 = primary, 1 = secondary etc)
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred.
+ * - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *         Call @ref s3eSurfaceGetError() to retrieve an error code.
+ *         This will return:
+ *   - @ref S3E_SURFACE_ERR_PARAM if @e id is invalid.
+ * @remark
+ * @e id is valid from 0 to @ref s3eSurfaceGetInt(@ref S3E_SURFACE_NUM_DISPLAYS) - 1.
+ * Calling this function will switch the surface interface to using the specified display.
+ * All the surface properties will return the properties of the new display, and the
+ * value returned by @ref s3eSurfacePtr() will change.
+ * @par Required Header Files:
+ * s3eSurface.h
+ */
+// S3E_API s3eResult s3eSurfaceSetDisplayID(uint32 id);
+gen s3eSurfaceSetDisplayID : uint32 -> s3eResult ;
+
+/**
+ * Surface orientation lock types
+ * User can lock surface rotation in landscape orientation or portrait orientation. User also can allow 
+ * 180 degree rotation.
+ * @see DispFixRot 
+ * @see s3eSurfaceSetOrientationLock
+ * @see s3eSurfaceGetOrientationLock
+ */
+cenum s3eSurfaceOrientationLock =
+    S3E_SURFACE_ORIENTATION_LOCK_MIN ,
+    
+    //! No orientation lock. Allowed orientations: all
+    S3E_SURFACE_ORIENTATION_FREE     ,
+    
+    //! Either portrait aspect, as selected by OS. Commonly the OS will use accelerometer reading to
+    //! choose orientation. Allowed orientations: native portrait, up-side-down portrait 
+    S3E_SURFACE_PORTRAIT             ,
+    
+    //! Either landscape aspect, as selected by OS. Commonly the OS will use accelerometer reading to
+    //! choose orientation. Allowed orientations: native landscape, up-side-down landscape 
+    S3E_SURFACE_LANDSCAPE            ,
+    
+    //! Fixed native portrait aspect that doesn't flip. Allowed only the native portrait for the device. 
+    S3E_SURFACE_PORTRAIT_FIXED       ,    
+    
+    //! Fixed native landscape that doesn't flip. Allowed only the native landscape for the device
+    S3E_SURFACE_LANDSCAPE_FIXED      ,
+    
+    S3E_SURFACE_ORIENTATION_LOCK_MAX
+;
+
+}

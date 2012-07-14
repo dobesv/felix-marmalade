@@ -1,0 +1,120 @@
+option lib
+
+subproject felix
+
+includepaths
+{
+  felix-dist/src/flx_drivers
+  felix-dist/src/judy/src
+  felix-dist/src/judy/src/Judy1
+  felix-dist/src/judy/src/JudyL
+  felix-dist/src/judy/src/JudyCommon
+  felix-dist/src/judy/src/JudyHS
+}
+
+files
+{
+    ["async"]
+    (felix-dist/src/flx_async)
+    flx_async.cpp
+    
+    ["exceptions"]
+    (felix-dist/src/exceptions)
+    flx_exceptions.cpp
+    
+    ["rtl"]
+  	(felix-dist/src/rtl)
+    flx_dynlink.cpp
+    flx_eh.cpp
+    flx_executil.cpp
+    flx_i18n.cpp
+    flx_ioutil.cpp
+    flx_main.cpp
+    flx_rtl.cpp
+    flx_strutil.cpp
+    flx_sync.cpp
+    plat_linux.cpp
+  
+    ["gc"]
+    (felix-dist/src/gc)
+    flx_collector.cpp
+    flx_gc.cpp
+    flx_judy_scanner.cpp
+    flx_ts_collector.cpp
+    
+    ["Judy"]
+    (felix-dist/src/judy/src/Judy1)
+    j__udy1Get.c
+    Judy1ByCount.c
+    Judy1Cascade.c
+    Judy1Count.c
+    Judy1CreateBranch.c
+    Judy1Decascade.c
+    Judy1Del.c
+    Judy1First.c
+    Judy1FreeArray.c
+    Judy1Get.c
+    Judy1Ins.c
+    Judy1InsArray.c
+    Judy1InsertBranch.c
+    Judy1MallocIF.c
+    Judy1MemActive.c
+    Judy1MemUsed.c
+    Judy1Next.c
+    Judy1NextEmpty.c
+    Judy1Prev.c
+    Judy1PrevEmpty.c
+    Judy1Tables32Bit.c
+    
+    (felix-dist/src/judy/src/JudyL)
+    j__udyLGet.c
+    JudyLByCount.c
+    JudyLCascade.c
+    JudyLCount.c
+    JudyLCreateBranch.c
+    JudyLDecascade.c
+    JudyLDel.c
+    JudyLFirst.c
+    JudyLFreeArray.c
+    JudyLGet.c
+    JudyLIns.c
+    JudyLInsArray.c
+    JudyLInsertBranch.c
+    JudyLMallocIF.c
+    JudyLMemActive.c
+    JudyLMemUsed.c
+    JudyLNext.c
+    JudyLNextEmpty.c
+    JudyLPrev.c
+    JudyLPrevEmpty.c
+    JudyLTables32Bit.c
+    
+    (felix-dist/src/judy/src/JudyCommon)
+    JudyMalloc.c
+    (felix-dist/src/judy/src/JudySL)
+    JudySL.c
+    (felix-dist/src/judy/src/JudyHS)
+    JudyHS.c
+    
+    ["pthread"]
+    (felix-dist/src/pthread)
+    pthread_mutex.cpp
+    pthread_condv.cpp
+    pthread_counter.cpp
+    pthread_waitable_bool.cpp
+    pthread_semaphore.cpp
+    pthread_monitor.cpp
+    pthread_bound_queue.cpp
+    pthread_work_fifo.cpp
+    pthread_thread_control.cpp
+    pthread_posix_thread.cpp
+  
+    ["run"]
+    (felix-dist/src/flx_drivers)
+    flx_run.include
+    
+    
+}
+
+
+	

@@ -1,0 +1,52 @@
+includepaths
+{
+  felix-config
+  felix-dist/lib/rtl
+}
+
+library
+{
+    ".,felix"
+}
+
+files
+{
+    ["config"]
+    (felix-config)
+    flx_rtl_config.hpp
+    flx_pthread_config.hpp
+    flx_gc_config.hpp
+    flx_faio_config.hpp
+    flx_re2_config.hpp
+    flx_tre_config.hpp
+    flx_meta.hpp
+    
+    (felix-dist/lib/rtl)
+    flx_async.hpp
+    flx_exceptions.hpp
+    flx_meta.hpp
+    flx_rtl.hpp
+    flx_compiler_support_bodies.hpp
+    flx_compiler_support_headers.hpp
+    flx_dynlink.hpp
+    flx_i18n.hpp
+    flx_ioutil.hpp
+    flx_strutil.hpp
+    flx_executil.hpp
+    pthread_thread.hpp
+    pthread_mutex.hpp
+    pthread_counter.hpp
+    pthread_waitable_bool.hpp
+    pthread_condv.hpp
+    pthread_semaphore.hpp
+    pthread_monitor.hpp
+    pthread_bound_queue.hpp
+    pthread_work_fifo.hpp
+    flx_gc.hpp
+    flx_judy_scanner.hpp
+    flx_collector.hpp
+    flx_gc_private.hpp
+    flx_ts_collector.hpp
+    Judy.h
+}
+

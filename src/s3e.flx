@@ -1,0 +1,41 @@
+
+include "s3eAccelerometer";
+include "s3eAudio";
+include "s3eCompression";
+include "s3eConfig";
+include "s3eCrypto";
+include "s3eDebug";
+include "s3eDevice";
+include "s3eExt";
+include "s3eFile";
+include "s3eKeyboard";
+include "s3eLicense";
+include "s3eMemory";
+include "s3ePointer";
+include "s3eSecureStorage";
+include "s3eSound";
+include "s3eSocket";
+include "s3eSurface";
+//#ifdef __S3E__
+//include "s3eThread";
+//#endif
+include "s3eTimer";
+include "s3eTypes";
+include "s3eVersion";
+include "s3eVibra";
+include "s3eVideo";
+include "s3eGL";
+
+open class s3e {
+  header s3e_h =   "#include <s3e.h>";
+  
+  inherit s3eTypes;
+  inherit s3eDevice;
+  inherit s3eSurface;
+  
+  body "#define FLX_SUPPORT_ASYNC 0";
+  body "#define FELIX_MAIN main";
+  body '#include "flx_run.include"';
+  
+}
+

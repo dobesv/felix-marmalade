@@ -1,0 +1,49 @@
+include "IwGeomCore";
+
+open class IwGeomFVec3 {
+  
+  header "#include <IwGeomFVec3.h>";
+  
+  cstruct CIwFVec3 {
+      x:float; //!< x-coordinate of the vector
+      y:float; //!< y-coordinate of the vector
+      z:float; //!< z-coordinate of the vector
+  };
+
+  const Zero : CIwFVec3 = "CIwFVec3::g_Zero";
+  const AxisX : CIwFVec3 = "CIwFVec3::g_AxisX";
+  const AxisY : CIwFVec3 = "CIwFVec3::g_AxisY";
+  const AxisZ : CIwFVec3 = "CIwFVec3::g_AxisZ";
+
+  ctor CIwFVec3 : float^3 = "CIwFVec3($a)";
+  ctor CIwFVec3 : CIwVec3 = "CIwFVec3($a)";
+  ctor CIwFVec3 : CIwFVec3 = "CIwFVec3($a)";
+  
+  fun GetLength : CIwFVec3 -> int32 = "$1.GetLength()";
+  fun GetLengthSquared : CIwFVec3 -> int32 = "$1.GetLengthSquared()";    
+  fun GetLengthSafe : CIwFVec3 -> int32 = "$1.GetLengthSafe()";    
+  fun GetLengthSquaredSafe : CIwFVec3 -> int32 = "$1.GetLengthSquaredSafe()";    
+  fun GetLengthSquaredUnshifted : CIwFVec3 -> int32 = "$1.GetLengthSquaredUnshifted()";    
+  proc NormaliseSlow : CIwFVec3 = "$1.NormaliseSlow();";
+  proc Normalise : CIwFVec3 = "$1.Normalise();";
+  fun GetNormalised : CIwFVec3 -> CIwFVec3 = "$1.GetNormalised()";
+  proc Normalise : CIwFVec3 = "$1.NormaliseSafe();";
+  fun GetNormalisedSafe : CIwFVec3 -> CIwFVec3 = "$1.GetNormalisedSafe()";
+  fun IsNormalised : CIwFVec3 -> bool = "$1.IsNormalised()";
+  proc Serialise : CIwFVec3 = "$1.Serialise();";
+  fun IsNormalised : CIwFVec3 -> bool = "$1.IsZero()";
+  fun Dot : CIwFVec3*CIwFVec3 -> int32 = "$1.Dot($2)";
+  fun Cross : CIwFVec3*CIwFVec3 -> int32 = "$1.Cross($2)";
+  fun + : CIwFVec3*CIwFVec3 -> CIwFVec3 = "$1 + $2";
+  fun - : CIwFVec3*CIwFVec3 -> CIwFVec3 = "$1 - $2";
+  fun * : CIwFVec3*CIwFVec3 -> int32 = "$1 * $2";
+  fun ^ : CIwFVec3*CIwFVec3 -> int32 = "$1 ^ $2";
+  fun == : CIwFVec3*CIwFVec3 -> bool = "$1 == $2";
+  fun != : CIwFVec3*CIwFVec3 -> bool = "$1 != $2";
+  fun - : CIwFVec3 -> CIwFVec3 = "- $1";
+  fun * : CIwFVec3 * iwfixed -> CIwFVec3 = "$1 * $2";
+  fun / : CIwFVec3 * iwfixed -> CIwFVec3 = "$1 / $2";
+  fun >> : CIwFVec3 * !ints -> CIwFVec3 = "$1 >> $2";
+  fun << : CIwFVec3 * !ints -> CIwFVec3 = "$1 << $2";
+  fun subscript : CIwFVec3 * !ints -> float = "$1[$2]";
+}

@@ -1,0 +1,43 @@
+include "IwGeomCore";
+
+open class IwGeomVec2 {
+
+  cstruct CIwVec2 {
+      x:int32; //!< x-coordinate of the vector
+      y:int32; //!< y-coordinate of the vector
+  };
+  
+  const Zero : CIwVec2 = "CIwVec2::g_Zero";
+  const AxisX : CIwVec2 = "CIwVec2::g_AxisX";
+  const AxisY : CIwVec2 = "CIwVec2::g_AxisY";
+  
+  ctor CIwVec2 : int32 * int32 = "CIwVec2($a)";
+  ctor CIwVec2 : CIwSVec2 = "CIwVec2($a)";
+  ctor CIwVec2 : CIwFVec2 = "CIwVec2($a)";
+  
+  fun GetLength : CIwVec2 -> int32 = "$1.GetLength()";
+  fun GetLengthSquared : CIwVec2 -> int32 = "$1.GetLengthSquared()";    
+  fun GetLengthSafe : CIwVec2 -> int32 = "$1.GetLengthSafe()";    
+  fun GetLengthSquaredSafe : CIwVec2 -> int32 = "$1.GetLengthSquaredSafe()";    
+  fun GetLengthSquaredUnshifted : CIwVec2 -> int32 = "$1.GetLengthSquaredUnshifted()";    
+  proc NormaliseSlow : CIwVec2 = "$1.NormaliseSlow();";
+  proc Normalise : CIwVec2 = "$1.Normalise();";
+  fun GetNormalised : CIwVec2 -> CIwVec2 = "$1.GetNormalised()";
+  proc Normalise : CIwVec2 = "$1.NormaliseSafe();";
+  fun GetNormalisedSafe : CIwVec2 -> CIwVec2 = "$1.GetNormalisedSafe()";
+  fun IsNormalised : CIwVec2 -> bool = "$1.IsNormalised()";
+  proc Serialise : CIwVec2 = "$1.Serialise();";
+  fun IsNormalised : CIwVec2 -> bool = "$1.IsZero()";
+  fun Dot : CIwVec2*CIwVec2 -> int32 = "$1.Dot($2)";
+  fun + : CIwVec2*CIwVec2 -> CIwVec2 = "$1 + $2";
+  fun - : CIwVec2*CIwVec2 -> CIwVec2 = "$1 - $2";
+  fun * : CIwVec2*CIwVec2 -> int32 = "$1 * $2";
+  fun == : CIwVec2*CIwVec2 -> bool = "$1 == $2";
+  fun != : CIwVec2*CIwVec2 -> bool = "$1 != $2";
+  fun - : CIwVec2 -> CIwVec2 = "- $1";
+  fun * : CIwVec2 * iwfixed -> CIwVec2 = "$1 * $2";
+  fun / : CIwVec2 * iwfixed -> CIwVec2 = "$1 / $2";
+  fun >> : CIwVec2 * !ints -> CIwVec2 = "$1 >> $2";
+  fun << : CIwVec2 * !ints -> CIwVec2 = "$1 << $2";
+  fun subscript : CIwVec2 * !ints -> int32 = "$1[$2]";
+}

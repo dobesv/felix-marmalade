@@ -1,0 +1,76 @@
+include "s3eTypes";
+// include "IwDebug";
+//include "IwMenu";
+//include "IwRuntime";
+
+open class IwGxPrint {
+
+  header "#include <IwGxPrint.h>";
+  
+	/**
+	 * Draws debug text directly to the surface.
+	 * @param x0 Screen x coordinate.
+	 * @param y0 Screen y coordinate.
+	 * @param txt Text to print.
+	 * @param wrap False only if we do not want to wrap text when we hit the right of the screen.
+	 * @note The text can contain format tags, a tag being a ` (backtick) followed by a character (tags cannot be stacked):
+	 * <ul>
+	 * <li>`x - The next 6 characters specify a text colour. The format of the specification is BBGGRR where
+	 * BB, GG, RR are hex values ranging from 00 to ff for the blue, green, and red channel respectively,
+	 * e.g <code>"`x0000ffThis is red"</code>
+	 * <li>`1 - Brighten subsequent text, e.g. <code>"`1This is bright"</code>
+	 * <li>`i - Swap the background colour with the text colour (invert), e.g. <code>"`iInverted text"</code>
+	 * <li>`a - No alpha, write background as black, e.g. <code>"`aNo alpha"</code>
+	 * <li>`` - A literal backtick, e.g. <code>"This is a backtick: ``"</code>
+	 * </ul>
+	 * Escape characters are also considered, i.e.
+	 * <ul>
+	 * <li>\\n - Line break, e.g. <code>"First line\nSecond line"</code>
+	 * <li>\\t - Horizontal tab, e.g. <code>"Tab1\tTab2\tTab3"</code>
+	 * <li>\\\\ - A backslash
+	 * </ul>
+	 * @par Required Header Files
+	 * IwGxPrint.h
+	 */
+	// void    IwGxPrintString(int32 x0, int32 y0, const char* txt, bool wrap = true); //int32 len, int32 wrap = 1);
+	proc IwGxPrintString : !ints * !ints * +char * bool;
+	proc IwGxPrintString : !ints * !ints * +char;
+
+	/**
+	 * Set the default print colour
+	 * @param r Red component
+	 * @param g Green component
+	 * @param b Blue component
+	 */
+	// void    IwGxPrintSetColour(uint8 r, uint8 g, uint8 b);
+	proc IwGxPrintSetColour : uint8^3;
+
+	/**
+	 * Sets the scale factor for printing text
+	 * @param scale Scale factor to apply to text. The width and height
+	 * of each character is multiplied by @e scale. @e scale must be in the range 1 - 10.
+	 */
+	// void    IwGxPrintSetScale(int scale);
+	proc IwGxPrintSetScale : int;
+
+	/**
+	 * Get the current text scale factor
+	 * @return Current text scale factor
+	 */
+	// int     IwGxPrintGetScale();
+	gen IwGxPrintGetScale : unit -> int;
+
+	/**
+	 * Draws Frames/Second to Screen
+	 */
+	// void    IwGxPrintFrameRate(int32 x0, int32 y0);
+	proc IwGxPrintFrameRate : int32^2;
+
+	/**
+	 * Standard printing callback to use with IwMenu
+	 * @par Required Header Files
+	 * IwGxPrint.h
+	 */
+	// void    IwGxPrintMenuCallback(const char* line, int32 x, int32 y, CIwMenuItem::ColourID colID);
+	// TODO 
+}

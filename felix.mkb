@@ -110,6 +110,8 @@ files
     pthread_posix_thread.cpp
   
     ["run"]
+    (.)
+    flx_main.cpp
     (felix-dist/src/flx_drivers)
     flx_run.include
     

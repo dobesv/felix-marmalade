@@ -4,150 +4,163 @@ include "s3eTypes";
 
 open class IwGeomCore {
 
-header '#include <IwGeomCore.h>';
+  open s3eTypes;
+  
+  header '#include <IwGeomCore.h>';
+  
+  //-----------------------------------------------------------------------------
+  // Initialisation function
+  //-----------------------------------------------------------------------------
+  /**
+   * Initialises the IwGeom module.
+   * @note This is done automatically by IwGxInit().
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  // void    IwGeomInit();
+  proc IwGeomInit : unit;
+  
+  /**
+   * Terminate IwGeom module. This is done automatically by IwGxTerminate().
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  //void    IwGeomTerminate();
+  proc IwGeomTerminate : unit;
+  
+  //------------------------------------------------------------------------------
+  // Defines
+  //------------------------------------------------------------------------------
+  /**
+   * Default position of fixed point, used with iwfixed and iwsfixed.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_POINT:int;
+  
+  /**
+   * Default position of fixed point, used with CIwQuat.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_QPOINT:int;
+  
+  /**
+   * Right shift used to convert quaternion fixed point to that of iwfixed.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_QPOINT_TO_GEOM_POINT:int;
+  
+  /**
+   * Value of pi as a floating point number.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const PI : float;
+  
+  /**
+   * One as a fixed point number for use with .12 formats.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_ONE : uint;
+  
+  /**
+   * One half (1/2) as a fixed point number for use with .12 formats.
+   */
+  const IW_GEOM_HALF : uint;
+  
+  /**
+   * Same value as IW_GEOM_ONE * IW_GEOM_ONE
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_ONE2 : uint;
+  
+  /**
+   * One as a fixed point number for use with .30 formats.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_QONE : uint;
+  
+  /**
+   * One half (1/2) as a fixed point number for use with .30 formats.
+   */
+  const IW_GEOM_QHALF : uint;
+  
+  /**
+   * Same value as IW_GEOM_QONE * IW_GEOM_QONE
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_QONE2 : int64;
+  
+  /**
+   * Small delta for high-resolution fixed point calculations.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_GEOM_QEPSILON : uint;
+  
+  /**
+   * PI as an iwangle.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_ANGLE_PI : iwangle;
+  
+  /**
+   * (2 * PI) as an iwangle.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_ANGLE_2PI : iwangle;
+  
+  /**
+   * (2 * PI) as an iwqangle.
+   * @par Required Header Files
+   * IwGeomCore.h
+   */
+  const IW_ANGLE_Q2PI : iwangle;
+  
+  //------------------------------------------------------------------------------
+  // Types
+  //------------------------------------------------------------------------------
+  /**
+   * Typedef of signed 32-bit fixed point number, in 1.19.12 format.
+   */
+  typedef iwfixed = int32;
+  
+  /**
+   * Typedef of unsigned 32-bit fixed point number, in 0.20.12 format.
+   */
+  typedef iwufixed = uint32;
+  
+  /**
+   * Typedef of signed 16-bit fixed point number, in 1.3.12 format.
+   */
+  typedef iwsfixed = int16;
+  
+  /**
+   * Typedef of unsigned 16-bit fixed point number, in 0.4.12 format.
+   */
+  typedef iwusfixed = uint16;
+  
+  /**
+   * Typedef of signed 32-bit high-resolution fixed point number, in 1.1.30 format.
+   */
+  typedef iwqfixed = int32;
 
-//-----------------------------------------------------------------------------
-// Initialisation function
-//-----------------------------------------------------------------------------
-/**
- * Initialises the IwGeom module.
- * @note This is done automatically by IwGxInit().
- * @par Required Header Files
- * IwGeomCore.h
- */
-// void    IwGeomInit();
-proc IwGeomInit : unit;
+  /**
+   * Typedef of 32-bit fixed point angle, where 0x800 represents PI.
+   */
+  typedef iwangle = int32;
+  
+  /**
+   * Typedef of 32-bit fixed point angle, where 0x8000 represents PI.
+   */
+  typedef iwqangle = int32;
 
-/**
- * Terminate IwGeom module. This is done automatically by IwGxTerminate().
- * @par Required Header Files
- * IwGeomCore.h
- */
-//void    IwGeomTerminate();
-proc IwGeomTerminate : unit;
-
-//------------------------------------------------------------------------------
-// Defines
-//------------------------------------------------------------------------------
-/**
- * Default position of fixed point, used with iwfixed and iwsfixed.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_POINT:int;
-
-/**
- * Default position of fixed point, used with CIwQuat.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_QPOINT:int;
-
-/**
- * Right shift used to convert quaternion fixed point to that of iwfixed.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_QPOINT_TO_GEOM_POINT:int;
-
-/**
- * Value of pi as a floating point number.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const PI : float;
-
-/**
- * One as a fixed point number for use with .12 formats.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_ONE : uint;
-
-/**
- * One half (1/2) as a fixed point number for use with .12 formats.
- */
-const IW_GEOM_HALF : uint;
-
-/**
- * Same value as IW_GEOM_ONE * IW_GEOM_ONE
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_ONE2 : uint;
-
-/**
- * One as a fixed point number for use with .30 formats.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_QONE : uint;
-
-/**
- * One half (1/2) as a fixed point number for use with .30 formats.
- */
-const IW_GEOM_QHALF : uint;
-
-/**
- * Same value as IW_GEOM_QONE * IW_GEOM_QONE
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_QONE2 : int64;
-
-/**
- * Small delta for high-resolution fixed point calculations.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_GEOM_QEPSILON : uint;
-
-/**
- * PI as an iwangle.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_ANGLE_PI : iwangle;
-
-/**
- * (2 * PI) as an iwangle.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_ANGLE_2PI : iwangle;
-
-/**
- * (2 * PI) as an iwqangle.
- * @par Required Header Files
- * IwGeomCore.h
- */
-const IW_ANGLE_Q2PI : iwangle;
-
-//------------------------------------------------------------------------------
-// Types
-//------------------------------------------------------------------------------
-/**
- * Typedef of signed 32-bit fixed point number, in 1.19.12 format.
- */
-typedef iwfixed = int32;
-
-/**
- * Typedef of unsigned 32-bit fixed point number, in 0.20.12 format.
- */
-typedef iwufixed = uint32;
-
-/**
- * Typedef of signed 16-bit fixed point number, in 1.3.12 format.
- */
-typedef iwsfixed = int16;
-
-/**
- * Typedef of unsigned 16-bit fixed point number, in 0.4.12 format.
- */
-typedef iwusfixed = uint16;
-
-/**
- * Typedef of signed 32-bit high-resolution fixed point number, in 1.1.30 format.
- */
-typedef iwqfixed = int32;
-
+}

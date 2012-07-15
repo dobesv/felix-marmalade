@@ -2,1082 +2,1092 @@
 include "s3eTypes";
 
 open class s3eDevice { 
-
-open s3eTypes;
-
-header "#include <s3eDevice.h>";
-
-/**
- * @addtogroup s3egroup
- * @{
- */
-
-/**
- * @defgroup deviceapigroup S3E Device Interface API Reference
- *
- * For more information on the Device Interface functionality provided by the
- * S3E module, see the "S3E Device Interface Overview" section of the
- * <em>S3E API Documentation</em>.
- *
- * @{
- */
-
-/**
- * Device Errors.
- * @see s3eDeviceGetError
- * @see s3eDeviceGetErrorString
- * @par Required Header Files
- * s3eDevice.h
- */
-
-cenum s3eDeviceError =
-    S3E_DEVICE_ERR_NONE           ,  ///< No Error.
-    S3E_DEVICE_ERR_PARAM          ,  ///< Invalid parameter.
-    S3E_DEVICE_ERR_TOO_MANY       ,  ///< Maximum number of callbacks exceeded.
-    S3E_DEVICE_ERR_ALREADY_REG    ,  ///< The specified callback is already registered.
-    S3E_DEVICE_ERR_NOT_FOUND      ,  ///< Path not found / callback not found for removal or phone info not found.
-    S3E_DEVICE_ERR_UNAVAIL        ,  ///< Device is unavailable.
-    S3E_DEVICE_ERR_DEVICE         ,  ///< The underlying file device failed.
-    S3E_DEVICE_ERR_UNSUPPORTED    ,  ///< The action requested is not supported.
-    S3E_DEVICE_ERR_MEM            ,  ///< Out of operating system memory during operation.
-    S3E_DEVICE_ERR_GENERIC        ,  ///< Unspecified error.
-    S3E_DEVICE_ERR_INVALID_DRIVE  ,  ///< Invalid/unsupported drive specified in path.
-    S3E_DEVICE_ERR_INVALID_PATH      ///< The path could not be resolved onto the device filesytem (e.g. opening ROM://../file).
-;
-
-/**
- * Retrieve the last error, if any, for this subdevice.
- * @see s3eDeviceGetErrorString
- *
- * @remark Calling this function will retrieve the last error and then remove it
- * from memory; therefore, any further calls to this function will not return
- * an error unless a subsequent error has occurred.
- *
- * @par Required Header Files
- * s3eDevice.h
- */
-
-fun s3eDeviceGetError : unit -> s3eDeviceError ;
-
-/**
- * Retrieve the last error as a string, if any, for this subdevice. This is
- * only available in debug builds.
- * @see s3eDeviceGetError
- *
- * @remark This function, as opposed to s3eDeviceGetError(), will always return
- * the last error no matter how many times it is called. This function should not be
- * relied upon to indicate whether an error has just occurred.
- *
- * @par Required Header Files
- * s3eDevice.h
- */
-fun s3eDeviceGetErrorString : unit -> +char ;
-
-/**
- * FPU Type.
- * This is an enumberation of FPU types used with ARM processors.
- * This type is returned by s3eDeviceGetInt(S3E_DEVICE_FPU).
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum fpu_type =
-    S3E_DEVICE_FPU_NONE  ,
-    S3E_DEVICE_FPU_VFP   ,
-    S3E_DEVICE_FPU_VFPV3 ,
-    S3E_DEVICE_FPU_NEON  
-;
-
-/**
- * Device Properties
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum s3eDeviceProperty =
-    /**
-     * [read, int, string] Return the device's operating system.  When
-     * retrieved as an integer this will be one of @ref s3eDeviceOSID.  When
-     * retrieved as a string is will be the string form of the enum value with
-     * out the S3E_OS_ID_ prefix.  For OS version information use
-     * S3E_DEVICE_OS_VERSION.
-     */
-    S3E_DEVICE_OS                   ,
-
-    /**
-     * [read, int, string] Return the device's class as an integer or a string.
-     * When read as an integer it will be one of @ref s3eDeviceClassID.
-     */
-    S3E_DEVICE_CLASS                ,
-
-    /**
-     * [read, int, string] Return the platform-specific device type ID as an
-     * integer or string. This can be used as a way to identify the exact
-     * handset model in use. If the underlying platform supports integer model
-     * identifiers then the string property will be the string version the
-     * integer. If the underlying platform uses string identifiers then the
-     * integer property will be a hash on the the string. To retrieve a unique
-     * identifier for the specific handset, use S3E_DEVICE_HANDSET_ID.
-     */
-    S3E_DEVICE_ID                   ,
-
-    /**
-     * [read, string] Return the device's phone number as a string.  On devices
-     * without a valid phone number, this will return the empty string.
-     */
-    S3E_DEVICE_PHONE_NUMBER         ,
-
-    /**
-     * [read, int] Return the current language in use on the device, one of
-     * @ref s3eDeviceLanguage.
-     */
-    S3E_DEVICE_LANGUAGE             ,
-
-    /**
-     * [read, int] Return the current state of the device, one of @ref
-     * s3eDeviceState. This can be used to query whether the device is paused
-     * or if the s3e application has been requested to quit.
-     */
-    S3E_DEVICE_STATE                ,
-
-    /**
-     * @deprecated Use #S3E_DEVICE_MEM_FREE
-     */
-    S3E_DEVICE_FREE_RAM             ,
-
-    /**
-     * @deprecated Use #S3E_DEVICE_MEM_TOTAL
-     */
-    S3E_DEVICE_TOTAL_RAM            ,
-
-    /**
-     * [read, int, string] Return the CPU architecture of the device. As an
-     * integer it will return one of @ref s3eDeviceArchitecture, as a string it
-     * will return a string version of one of @ref s3eDeviceArchitecture,
-     * without the 'S3E_DEVICE_ARCHITECTURE_' prefix, e.g. "ARM4T".
-     */
-    S3E_DEVICE_ARCHITECTURE         ,
-
-    /**
-     * [read, int, string] Return the highest version of S3E supported by the
-     * loader, as an integer or as a string. The integer is of hex format
-     * 0x00mmnnrr where mm is the major version, nn the minor version
-     * and nn the revision number. The string is of the format "m.n.r", where
-     * m,n,r are decimal version of the major, minor and revision version
-     * numbers.
-     */
-    S3E_DEVICE_S3E_VERSION          ,
-
-    /**
-     * [read, int] Return the battery level as a percentage 0-100.
-     * If this functionality is not supported, s3eDeviceGetInt() will return 100.
-     */
-    S3E_DEVICE_BATTERY_LEVEL        ,
-
-    /**
-     * [read, int] Returns whether the left softkey (1) or the right softkey
-     * (0) should be used as a 'back' key for menus. For example, this is 0 on
-     * Nokia/Symbian devices and 1 on BREW devices.
-     */
-    S3E_DEVICE_LEFT_SOFTKEY_IS_BACK ,
-
-    /**
-     * [read, int] Return 1 if device is connected to a power cable, 0 if it is
-     * running on battery power.
-     * If this functionality is not supported, s3eDeviceGetInt() will return 0.
-     */
-    S3E_DEVICE_MAINS_POWER          ,
-
-    /**
-     * [read, int, string] Return version information about the underlying OS.
-     * When retrieved as an integer top and bottom 16-bits represent the major
-     * and minor OS versions respectively.  When retrieved as a string the full
-     * OS name and version is reported.  e.g. "Linux 2.6.24", "Windows XP SP2",
-     * "Symbian 9"
-     */
-    S3E_DEVICE_OS_VERSION           ,
-
-    /**
-     * [read, string] Return ID of the chipset.
-     * On BREW these are of the form "MSM3100", "MSM5100" etc.
-     */
-    S3E_DEVICE_CHIPSET              ,
-
-    /**
-     * [read, write, int] When read, this property returns the exit code of the
-     * last S3E application that ran, or 0 if no previous application has run.
-     * When written to, this property set the return code of the current
-     * application. This will then be read by the s3e implementation when
-     * s3eDeviceExit() is called.
-     */
-    S3E_DEVICE_EXIT_CODE            ,
-
-    /**
-     * [read, int] Return the type of ARM FPU present on the current device.
-     * The return value will be one of #s3eDeviceFPUType.
-     */
-    S3E_DEVICE_FPU                  ,
-
-    /**
-     * [read, int] When read, this property returns the position of the
-     * back action softkey base on the enum s3eDeviceSoftKeyPosition.
-     */
-    S3E_DEVICE_BACK_SOFTKEY_POSITION     ,
-
-    /**
-     * [read, int] When read, this property returns the position of the
-     * advance action softkey base on the enum s3eDeviceSoftKeyPosition.
-     */
-    S3E_DEVICE_ADVANCE_SOFTKEY_POSITION     ,
-
-    /**
-     * [read, int, string] When read, this property returns the version
-     * of the SDK that the S3E loader shipped with.  When read as a
-     * string this has the save format as the @ref S3E_VERSION_STRING macro.
-     * When read as an int it returns the major, minor and revision numbers
-     * only in 0x00mmnnrr format.   This only time this will differ to the
-     * content MarmaladeVersion.h is when an application is build with one
-     * SDK and run using a loader from anther SDK.
-     */
-    S3E_DEVICE_SDK_VERSION,
-
-    /**
-     * [read, string] Return the current device locale as a language-country
-     * code pair using the ISO 639 and ISO 3166 formats respectively. For
-     * example, if the device is set to English (UK) it will return "en_GB". If
-     * the device does not support providing a locale, it will return the empty
-     * string.
-     */
-    S3E_DEVICE_LOCALE,
-
-    /**
-     * [read, string] Return the name given to the current device by the user,
-     * if they OS supports such a concept.  For example: "John's Smartphone".
-     */
-    S3E_DEVICE_NAME,
-
-    /**
-     * [read, int] Return true of the OS supports the handling of CPU exceptions and
-     * therefore the loader can continue when an application crashes.  If this feature
-     * is available the current application will exit and the next application on the
-     * stack will then run.
-     */
-    S3E_DEVICE_SUPPORTS_SIGNAL_HANDLING,
-
-    /**
-     * [read, int] This property returns the signal, if any, that killed the previous
-     * application.  This property is generally only meaning if the device supports
-     * handling of CPU exceptions.  The possible signals that can be returned are
-     * the same as those listed in <signal.h>
-     */
-    S3E_DEVICE_EXIT_SIGNAL,
-
-    /**
-     * [read, int] This property returns the boolean value of the devices
-     * proximity sensoror -1 if it doesn't have one.  Possible uses include
-     * triggering audio recording when the sensor signals that the user is
-     * proximity with the device.
-     */
-    S3E_DEVICE_PROXIMITY,
-
-    /**
-     * [read, int, string] Return a unique ID for the device handset in use, as
-     * an integer or string. This ID will be unique among all handsets
-     * available for the OS. To retrieve an ID for the <em>type</em> of device,
-     * use S3E_DEVICE_ID.  If the underlying platform supports integer model
-     * identifiers then the string property will be the string version of the
-     * integer. If the underlying platform uses string identifiers then the
-     * integer property will be a hash on the the string. The value is the
-     * IMEI on platforms that support retrieving this.
-     * Platforms which cannot provide a unique identifier will return "" or 0
-     * and set the error code to S3E_DEVICE_ERR_UNSUPPORTED.
-     * @platnote{ios} On iOS the device ID is the UDID. UDIDs are deprecated in
-     * iOS 5.0 and newer; apps should use UUIDs (CFUUIDCreate) via the EDK.
-     */
-    S3E_DEVICE_UNIQUE_ID,
-
-    /**
-     * [read, string] Return the IMSI number of the SIM card currently inserted
-     * in the device. This is a string of 15 digits which uniquely identifies
-     * the SIM card as well as the country and carrier from which is was
-     * obtained. Platforms which do not support this feature such as the iPhone
-     * will return the empty string ("") and set the error code to
-     * S3E_DEVICE_ERR_UNSUPPORTED. Some platforms may return a partial IMSI (e.g.
-     * on bada the MSIN component will be zeroed out).
-     */
-    S3E_DEVICE_IMSI,
-
-    /**
-     * [read] Returns S3E_TRUE if the device is in a silent mode or profile
-     * whereby all sound output is muted.
-     */
-    S3E_DEVICE_SILENT_MODE,
-
-    /**
-     * [read] Returns the number of CPU cores on the device.
-     */
-    S3E_DEVICE_NUM_CPU_CORES,
-
-    /**
-     * [read, int] Return the number KiB physical RAM installed on the device.
-     */
-    S3E_DEVICE_MEM_TOTAL,
-
-    /**
-     * [read, int] Return the amount of free physical RAM available to the
-     * operating system (note: this is not the same as the memory available to
-     * S3E or to the application).  Returned value is in KiB.
-     */
-    S3E_DEVICE_MEM_FREE,
-
-    /**
-     * [read, string] Return the device's current timezone as three or more
-     * alphabetical characters.  e.g. GMT, PST.
-     */
-    S3E_DEVICE_TIMEZONE
-    
-;
-
-/**
- * Device OS IDs.
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum s3eDeviceOSID =
-    /** Symbian OS. */
-    S3E_OS_ID_SYMBIAN       ,
-    /** Qualcomm BREW (unsupported legacy platform). */
-    S3E_OS_ID_BREW          ,
-    /** Any version of Microsoft Windows(tm). */
-    S3E_OS_ID_WINDOWS       ,
-    /** Any version of Microsoft Windows(tm) Mobile. */
-    S3E_OS_ID_WINMOBILE     ,
-    /** Any version of Linux. */
-    S3E_OS_ID_LINUX         ,
-    /** SKT or KTF WIPI. */
-    S3E_OS_ID_WIPI          ,
-    /** Nintendo DS. */
-    S3E_OS_ID_NDS           ,
-    /** ARM Semihosted environment (dev board). */
-    S3E_OS_ID_ARM_SEMIH     ,
-    /** Nucleus-based RTOS dev board. */
-    S3E_OS_ID_NUCLEUS       ,
-    /** N-Gage (unsupported legacy platform). */
-    S3E_OS_ID_NGI           ,
-    /** Microsoft Windows(tm) CE (excluding Windows Mobile). */
-    S3E_OS_ID_WINCE         ,
-    /** Sharp device running EMP chipset. */
-    S3E_OS_ID_SHARPEMP      ,
-    /** Apple OSX. */
-    S3E_OS_ID_OSX           ,
-    /** Apple iOS/iPhone OS. */
-    S3E_OS_ID_IPHONE        ,
-    /** UIQ OS. */
-    S3E_OS_ID_UIQ           ,
-    /** PS3 OS. */
-    S3E_OS_ID_PS3           ,
-    /** XBOX 360 OS. */
-    S3E_OS_ID_X360          ,
-    /** bada OS. */
-    S3E_OS_ID_BADA          ,
-    /** Android OS. */
-    S3E_OS_ID_ANDROID       ,
-    /** Palm webOS. */
-    S3E_OS_ID_WEBOS         ,
-    /** PSP OS. */
-    S3E_OS_ID_PSP           ,
-    /** Wii OS. */
-    S3E_OS_ID_WII           ,
-// \cond HIDDEN_DEFINES
-    S3E_OS_ID_MEEGO         ,
-// \endcond
-    /** QNX (Playbook). */
-    S3E_OS_ID_QNX           
-;
-
-/**
- * Device class IDs.
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum s3eDeviceClassID =
-    S3E_DEVICE_CLASS_UNKNOWN                    ,
-
-    S3E_DEVICE_CLASS_SYMBIAN_GENERIC            ,
-    S3E_DEVICE_CLASS_SYMBIAN_SERIES60           ,
-    S3E_DEVICE_CLASS_SYMBIAN_SERIES60_EMULATOR  ,
-    S3E_DEVICE_CLASS_SYMBIAN_UIQ                ,
-    S3E_DEVICE_CLASS_SYMBIAN_UIQ_EMULATOR       ,
-
-    S3E_DEVICE_CLASS_BREW_GENERIC               ,
-    S3E_DEVICE_CLASS_BREW_QCIF_3G               ,
-    S3E_DEVICE_CLASS_BREW_QCIF_25G              ,
-    S3E_DEVICE_CLASS_BREW_SQCIF_25G             ,
-    S3E_DEVICE_CLASS_BREW_QVGA_3G               ,
-
-    S3E_DEVICE_CLASS_WINDOWS_GENERIC            ,
-
-    S3E_DEVICE_CLASS_WINCE_GENERIC              ,
-    S3E_DEVICE_CLASS_WINMOBILE_SP               ,
-    S3E_DEVICE_CLASS_WINMOBILE_PPC              ,
-
-    S3E_DEVICE_CLASS_LINUX_GENERIC              ,
-    S3E_DEVICE_CLASS_LINUX_DESKTOP              ,
-    S3E_DEVICE_CLASS_LINUX_EMBED                ,
-
-    S3E_DEVICE_CLASS_WIPI_GENERIC               ,
-
-    S3E_DEVICE_CLASS_NDS_GENERIC                ,
-    S3E_DEVICE_CLASS_NDS_NDSI                   ,
-
-    S3E_DEVICE_CLASS_ARM_SEMIH_GENERIC          ,
-
-    S3E_DEVICE_CLASS_NUCLEUS_GENERIC            ,
-
-    S3E_DEVICE_CLASS_NGI_GENERIC                ,
-
-    S3E_DEVICE_CLASS_OSX_DESKTOP                ,
-
-    S3E_DEVICE_CLASS_IPHONE                     ,
-
-    S3E_DEVICE_CLASS_PS3                        ,
-    S3E_DEVICE_CLASS_X360                       ,
-    S3E_DEVICE_CLASS_BADA_GENERIC               ,
-    S3E_DEVICE_CLASS_ANDROID_GENERIC            ,
-    S3E_DEVICE_CLASS_PSP                        ,
-    S3E_DEVICE_CLASS_WII                        ,
-    S3E_DEVICE_CLASS_QNX                        
-;
-
-/**
- * Language used on device.
- */
-cenum s3eDeviceLanguage =
-    S3E_DEVICE_LANGUAGE_UNKNOWN         ,  //!< Unknown Language.
-    S3E_DEVICE_LANGUAGE_ENGLISH         ,  //!< English Language.
-    S3E_DEVICE_LANGUAGE_FRENCH          ,  //!< French Language.
-    S3E_DEVICE_LANGUAGE_GERMAN          ,  //!< German Language.
-    S3E_DEVICE_LANGUAGE_SPANISH         ,  //!< Spanish Language.
-    S3E_DEVICE_LANGUAGE_ITALIAN         ,  //!< Italian Language.
-    S3E_DEVICE_LANGUAGE_PORTUGUESE      ,  //!< Portuguese Language.
-    S3E_DEVICE_LANGUAGE_DUTCH           ,  //!< Dutch Language.
-    S3E_DEVICE_LANGUAGE_TURKISH         ,  //!< Turkish Language.
-    S3E_DEVICE_LANGUAGE_CROATIAN        ,  //!< Croatian Language.
-    S3E_DEVICE_LANGUAGE_CZECH           , //!< Czech Language.
-    S3E_DEVICE_LANGUAGE_DANISH          , //!< Danish Language.
-    S3E_DEVICE_LANGUAGE_FINNISH         , //!< Finnish Language.
-    S3E_DEVICE_LANGUAGE_HUNGARIAN       , //!< Hungarian Language.
-    S3E_DEVICE_LANGUAGE_NORWEGIAN       , //!< Norwegian Language.
-    S3E_DEVICE_LANGUAGE_POLISH          , //!< Polish Language.
-    S3E_DEVICE_LANGUAGE_RUSSIAN         , //!< Russian Language.
-    S3E_DEVICE_LANGUAGE_SERBIAN         , //!< Serbian Language.
-    S3E_DEVICE_LANGUAGE_SLOVAK          , //!< Slovak Language.
-    S3E_DEVICE_LANGUAGE_SLOVENIAN       , //!< Slovenian Language.
-    S3E_DEVICE_LANGUAGE_SWEDISH         , //!< Swedish Language.
-    S3E_DEVICE_LANGUAGE_UKRAINIAN       , //!< Ukrainian Language.
-    S3E_DEVICE_LANGUAGE_GREEK           , //!< Greek Language.
-    S3E_DEVICE_LANGUAGE_JAPANESE        , //!< Japanese Language
-    S3E_DEVICE_LANGUAGE_SIMPL_CHINESE   , //!< Simplified Chinese Language
-    S3E_DEVICE_LANGUAGE_TRAD_CHINESE    , //!< Traditional Chinese Language
-    S3E_DEVICE_LANGUAGE_KOREAN          , //!< Korean Language
-    S3E_DEVICE_LANGUAGE_ICELANDIC       , //!< Icelandic Language
-    S3E_DEVICE_LANGUAGE_FLEMISH         , //!< Flemish Language
-    S3E_DEVICE_LANGUAGE_THAI            , //!< Thai Language
-    S3E_DEVICE_LANGUAGE_AFRIKAANS       , //!< Afrikaans Language
-    S3E_DEVICE_LANGUAGE_ALBANIAN        , //!< Albanian Language
-    S3E_DEVICE_LANGUAGE_AMHARIC         , //!< Amharic Language
-    S3E_DEVICE_LANGUAGE_ARABIC          , //!< Arabic Language
-    S3E_DEVICE_LANGUAGE_ARMENIAN        , //!< Armenian Language
-    S3E_DEVICE_LANGUAGE_AZERBAIJANI     , //!< Azerbaijani Language
-    S3E_DEVICE_LANGUAGE_TAGALOG         , //!< Tagalog Language
-    S3E_DEVICE_LANGUAGE_BELARUSSIAN     , //!< Belarussian Language
-    S3E_DEVICE_LANGUAGE_BENGALI         , //!< Bengali Language
-    S3E_DEVICE_LANGUAGE_BULGARIAN       , //!< Bulgarian Language
-    S3E_DEVICE_LANGUAGE_BURMESE         , //!< Burmese Language
-    S3E_DEVICE_LANGUAGE_CATALAN         , //!< Catalan Language
-    S3E_DEVICE_LANGUAGE_ESTONIAN        , //!< Estonian Language
-    S3E_DEVICE_LANGUAGE_FARSI           , //!< Farsi Language
-    S3E_DEVICE_LANGUAGE_GAELIC          , //!< Gaelic Language
-    S3E_DEVICE_LANGUAGE_GEORGIAN        , //!< Georgian Language
-    S3E_DEVICE_LANGUAGE_GUJARATI        , //!< Gujarati Language
-    S3E_DEVICE_LANGUAGE_HEBREW          , //!< Hebrew Language
-    S3E_DEVICE_LANGUAGE_HINDI           , //!< Hindi Language
-    S3E_DEVICE_LANGUAGE_INDONESIAN      , //!< Indonesian Language
-    S3E_DEVICE_LANGUAGE_IRISH           , //!< Irish Language
-    S3E_DEVICE_LANGUAGE_KANNADA         , //!< Kannada Language
-    S3E_DEVICE_LANGUAGE_KAZAKH          , //!< Kazakh Language
-    S3E_DEVICE_LANGUAGE_KHMER           , //!< Khmer Language
-    S3E_DEVICE_LANGUAGE_LAO             , //!< Lao Language
-    S3E_DEVICE_LANGUAGE_LATVIAN         , //!< Latvian Language
-    S3E_DEVICE_LANGUAGE_LITHUANIAN      , //!< Lithuanian Language
-    S3E_DEVICE_LANGUAGE_MACEDONIAN      , //!< Macedonian Language
-    S3E_DEVICE_LANGUAGE_MALAY           , //!< Malay Language
-    S3E_DEVICE_LANGUAGE_MALAYALAM       , //!< Malayalam Language
-    S3E_DEVICE_LANGUAGE_MARATHI         , //!< Marathi Language
-    S3E_DEVICE_LANGUAGE_MOLDOVIAN       , //!< Moldovian Language
-    S3E_DEVICE_LANGUAGE_MONGOLIAN       , //!< Mongolian Language
-    S3E_DEVICE_LANGUAGE_PUNJABI         , //!< Punjabi Language
-    S3E_DEVICE_LANGUAGE_ROMANIAN        , //!< Romanian Language
-    S3E_DEVICE_LANGUAGE_SINHALESE       , //!< Sinhalese Language
-    S3E_DEVICE_LANGUAGE_SOMALI          , //!< Somali Language
-    S3E_DEVICE_LANGUAGE_SWAHILI         , //!< Swahili Language
-    S3E_DEVICE_LANGUAGE_TAJIK           , //!< Tajik Language
-    S3E_DEVICE_LANGUAGE_TAMIL           , //!< Tamil Language
-    S3E_DEVICE_LANGUAGE_TELUGU          , //!< Telugu Language
-    S3E_DEVICE_LANGUAGE_TIBETAN         , //!< Tibetan Language
-    S3E_DEVICE_LANGUAGE_TIGRINYA        , //!< Tigrinya Language
-    S3E_DEVICE_LANGUAGE_TURKMEN         , //!< Turkmen Language
-    S3E_DEVICE_LANGUAGE_URDU            , //!< Urdu Language
-    S3E_DEVICE_LANGUAGE_UZBEK           , //!< Uzbek Language
-    S3E_DEVICE_LANGUAGE_VIETNAMESE      , //!< Vietnamese Language
-    S3E_DEVICE_LANGUAGE_WELSH           , //!< Welsh Language
-    S3E_DEVICE_LANGUAGE_ZULU              //!< Zulu Language
-;
-
-/**
- * Architecture returned through s3eDeviceGetInt(S3E_DEVICE_ARCHITECTURE).
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum s3eDeviceArchitecture =
-    S3E_DEVICE_ARCHITECTURE_ARM4T   ,  //!< ARM processor with v4 instruction set and thumb support.
-    S3E_DEVICE_ARCHITECTURE_ARM4    ,  //!< ARM processor with v4 instruction set and no thumb support.
-    S3E_DEVICE_ARCHITECTURE_ARM5T   ,  //!< ARM processor with v5 instruction set and thumb support.
-    S3E_DEVICE_ARCHITECTURE_ARM5TE  ,  //!< ARM processor with v5 instruction set, dsp extensions and thumb support.
-    S3E_DEVICE_ARCHITECTURE_ARM5TEJ ,  //!< ARM processor with v5 instruction set, dsp extensions, thumb and jazelle support.
-    S3E_DEVICE_ARCHITECTURE_ARM6    ,  //!< ARM processor with v6 instruction set and thumb support.
-    S3E_DEVICE_ARCHITECTURE_ARM6K   ,  //!< ARM processor with v6 instruction set, SMP extensions and thumb support.
-    S3E_DEVICE_ARCHITECTURE_ARM6T2  ,  //!< ARM processor with v6 instruction set, thumb and thumb-2 support.
-    S3E_DEVICE_ARCHITECTURE_ARM6Z   ,  //!< ARM processor with v6 instruction set and trustzone support.
-    S3E_DEVICE_ARCHITECTURE_ARM7    , //!< ARM processor with v7 instruction set, trustzone, thumb and thumb-2 support.
-    S3E_DEVICE_ARCHITECTURE_X86     ,  //!< x86 architecture.
-    S3E_DEVICE_ARCHITECTURE_PPC     , //!< PowerPC architecture.
-    S3E_DEVICE_ARCHITECTURE_AMD64   , //!< amd64 aka x86_64 architecture.
-    S3E_DEVICE_ARCHITECTURE_MIPS    , //!< MIPS architecture.
-    S3E_DEVICE_ARCHITECTURE_MAX     
-;
-
-
-/**
- * Position of the softkey returned through s3eDeviceGetInt(S3E_DEVICE_BACK_SOFTKEY_POSITION)
- * or s3eDeviceGetInt(S3E_DEVICE_ADVANCE_SOFTKEY_POSITION).
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum s3eDeviceSoftKeyPosition =
-    S3E_DEVICE_SOFTKEY_BOTTOM_LEFT          ,
-    S3E_DEVICE_SOFTKEY_BOTTOM_RIGHT         ,
-    S3E_DEVICE_SOFTKEY_TOP_RIGHT            ,
-    S3E_DEVICE_SOFTKEY_TOP_LEFT             
-;
-
-/**
- * Retrieves a string property for this subdevice.
- * @param property property to get.
- * @return
- *  - A NULL-terminated property string of length >= 1 if the operation succeeded.
- *  - The empty string ("") if the operation failed.\n
- *    Call s3eDeviceGetError() to retrieve an error code. This will return:
- *    @ref S3E_DEVICE_ERR_PARAM if @e property is invalid.
- *
- * @remark
- * Valid properties are:
- *  - S3E_DEVICE_OS:\n
- *    returns one of {"SYMBIAN", "BREW", "WINDOWS", "WINMOBILE", "LINUX", "WIPI", etc...}.
- *  - S3E_DEVICE_CLASS:\n
- *    returns e.g. "BREW_QCIF_3G".
- *  - S3E_DEVICE_ID:\n
- *    Gets the device ID. This maps directly to a system-dependent device ID
- *    therefore device IDs cannot be assumed to be unique between different
- *    OS's. Previously unseen devices may return device IDs not in the
- *    enumeration. For BREW see device data sheets.
- *  - S3E_DEVICE_PHONE_NUMBER:\n
- *    returns e.g. ("01321435345").
- *  - S3E_DEVICE_ARCHITECTURE:\n
- *    returns one of {"ARM4T", "ARM4", "ARM5T", "ARM5TE", "ARM5TEJ", "ARM6", "ARM6K",
- *                    "ARM6T2", "ARM6Z", "ARM7", "x86", "PPC", "AMD64"}.
- *  - S3E_DEVICE_S3E_VERSION:\n
- *    returns e.g. ("2.0.1") whereas the first number represents the major version
- *    (see S3E_VERSION_MAJOR) the second one the minor version (see
- *    S3E_VERSION_MINOR) and the third one being the revision (see
- *    S3E_VERSION_REVISION).
- *
- * @see s3eDeviceGetInt
- */
-
-fun s3eDeviceGetString: s3eDeviceProperty -> +char ;
-
-/**
- * Retrieves an integer property for the Device Module.
- * @param property property to get.
- * @return
- *  - The value of the requested property if property is valid.
- *  - -1 if the property is not valid.\n
- *    Call @ref s3eDeviceGetError() to retrieve an error code. This will return:\n
-      @ref S3E_DEVICE_ERR_PARAM if @e property is not valid.
- * @remark
- * You can pass in the following properties to the function:
- *  - S3E_DEVICE_OS:\n
- *    Returns one of the @ref s3eDeviceOSID.
- *  - S3E_DEVICE_CLASS:\n
- *    Returns one of @ref s3eDeviceClassID; the device class.
- *  - S3E_DEVICE_ID:\n
- *    Gets the device ID. This maps directly to a system-dependent device ID
- *    therefore device IDs cannot be assumed to be unique between different
- *    OS's. Previously unseen devices may return device IDs not in the
- *    enumeration. For BREW see device data sheets.
- *  - S3E_DEVICE_LANGUAGE:\n
- *    Return the current device language, which will be one of @ref s3eDeviceLanguage.
- *  - S3E_DEVICE_MEM_TOTAL:\n
- *    Return the total physical RAM of this device.
- *  - S3E_DEVICE_MEM_FREE:\n
- *    Return the free memory that is currently available to the OS. This
- *    memory is not necessarily available to the s3e application.
- *  - S3E_DEVICE_ARCHITECTURE:\n
- *    Returns one of the @ref s3eDeviceArchitecture.
- *  - S3E_DEVICE_S3E_VERSION:\n
- *    Returns S3E_VERSION.
- *
- * @see s3eDeviceGetString
- */
-fun s3eDeviceGetInt : s3eDeviceProperty -> int32 ;
-
-/**
- * Sets an integer property for the Device module.
- * @param property property to set.
- * @param value New value for property.
- * @see s3eDeviceGetInt
- * @return
- * - @ref S3E_RESULT_SUCCESS if no error occurred.
- * - @ref S3E_RESULT_ERROR if the operation failed.\n
- *         Call s3eDeviceGetError() to retrieve an error code.
- *         This will return:
- *   - @ref S3E_FILE_ERR_PARAM if @e property is invalid or @e value is invalid.
- * You can pass in the following property to the function:
- *  - S3E_DEVICE_EXIT_CODE:\n
- *    Sets the return code of the current application.
- *
- * @par Required Header Files
- * s3eDevice.h
- */
-
-fun s3eDeviceSetInt : s3eDeviceProperty*int32 -> s3eResult ;
-
-const S3E_DEVICE_YIELD_FOREVER : int32 = "S3E_DEVICE_YIELD_FOREVER";
-const S3E_DEVICE_YIELD_NO_CALLBACKS : int32 = "S3E_DEVICE_YIELD_NO_CALLBACKS";
-
-/**
- * Yield to the OS for a specified period of time.
- * @param ms Maximum number of milliseconds to yield. If this is zero, s3eDeviceYield()
- *           performs a minimal yield to the OS and fires any events generated
- *           from the OS devices.  If this is S3E_DEVICE_YIELD_FOREVER,
- *           s3eDeviceYield() will not return until either a quit request is received
- *           or s3eDeviceUnYield() is called (e.g. from a callback). If this is
- *           S3E_DEVICE_YIELD_NO_CALLBACKS, a minimal yield to the OS is done, but no
- *           callbacks will be dispatched.
- * @remark This also allows the OS to do any required processing for this
- *         application, for example processing Device or UI messages.
- * It may also permit the CPU to enter a low-power state.
- * If ms is zero, S3E will yield for the minimum amount of time required by the
- * underlying OS to perform essential processing. Therefore the S3E Application
- * should call s3eDeviceYield(0) frequently to enable the underlying OS to
- * respond in a timely manner to external events. S3E ensures that
- * s3eDeviceYield(0) can be called very frequently (more that once a
- * millisecond) with very little overhead.
- * If ms is non-zero S3E will allow the OS to perform necessary processing and
- * return control to the caller after ms milliseconds.
- * @par Required Header Files
- * s3eDevice.h
- */
-//S3E_API int64 s3eDeviceYield(int32 ms S3E_DEFAULT(0));
-fun s3eDeviceYield : int32 -> int64 ;
-fun s3eDeviceYield : unit -> int64 ;
-
-/**
- * Exits the top-level yield.
- * @see s3eDeviceYield
- * @see s3eDeviceYieldUntilEvent
- * @remark
- * This function should be called from within a callback. It will cause the call
- * to s3eDeviceYield(), during which the callback was generated, to exit immediately
- * without completing the remainder of the yield duration.
- *
- * This can be used for example, to wait for specific events by calling
- * s3eDeviceYield(S3E_DEVICE_YIELD_FOREVER) then calling s3eDeviceUnYield()
- * in the callback for a specific event.
- *
- * If s3eDeviceYield() has been called recursively (i.e. a callback has called
- * s3eDeviceYield()) then s3eDeviceUnYield() will only exit the last call to
- * s3eDeviceYield(). Calling s3eDeviceUnYield() followed by s3eDeviceYield()
- * will cancel the call to s3eDeviceUnYield().
- * @par Required Header Files
- * s3eDevice.h
- */
-//S3E_API void s3eDeviceUnYield();
-fun s3eDeviceUnYield : unit -> void ;
-
-/**
- * Yields until an event.
- * @param ms Maximum time to yield for. If this is zero or
- * S3E_DEVICE_YIELD_FOREVER, s3eDeviceYieldUntilEvent() will yield forever
- * (note that this is different to s3eDeviceYield)
- * @see s3eDeviceYield
- * @see s3eDeviceUnYield
- * @remark
- * This function yields until any callback event occurs. The yield will
- * exit whether or not a callback is registered for the event.
- *
- * Callback events include input events (see @ref s3eKeyboardCallback),
- * network events (see @ref s3eSocketCallback) and operating system
- * events (see @ref s3eDeviceCallback). Therefore calling this function is
- * a good way of reducing CPU usage when waiting for external events,
- * for example in application menus.
- * Sound channel callbacks (see @ref s3eSoundChannelCallback) do not cause
- * s3eDeviceYieldUntilEvent to return.
- *
- * If application exit has been requested (see @ref s3eDeviceRequestQuit
- * and @ref s3eDeviceCheckQuitRequest) then this function will perform
- * s3eDeviceYield(0) and return immediately.
- *
- * @par Required Header Files
- * s3eDevice.h
- */
-// S3E_API void s3eDeviceYieldUntilEvent(int32 ms S3E_DEFAULT(S3E_DEVICE_YIELD_FOREVER));
-fun s3eDeviceYieldUntilEvent : int32 -> void ;
-fun s3eDeviceYieldUntilEvent : unit -> void ;
-
-
-/**
- * Exit the current s3e application.
- * @param code The return code that will be available to the parent application.
- * This will exit the current s3e application immediately. All resources
- * consumed by the application will be cleared-up automatically.
- * Static destructors for globally-defined classes and atexit() registered
- * functions will not be called.  If this behaviour is desired then the user
- * should exit the main() function normally. If another s3e application is set
- * to execute via s3eDeviceExecPushNext(), it will be executed.
- * If you want to return a non-zero exit code to the S3E layer use the
- * S3E_DEVICE_EXIT_CODE property.
- * @par Required Header Files
- * s3eDevice.h
- */
-// S3E_API void s3eDeviceExit(int code S3E_DEFAULT(0)) NO_RETURN;
-fun s3eDeviceExit : int -> void ;
-fun s3eDeviceExit : unit -> void ;
-
-/**
- * Device state.
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum s3eDeviceState =
-    /**
-     * Paused. The @ref S3E_DEVICE_PAUSE notification has been sent, and
-     * @ref S3E_DEVICE_UNPAUSE has not been sent.
-     */
-    S3E_DEVICE_STATE_PAUSED  ,
-
-    /**
-     * Exiting the application. The @ref S3E_DEVICE_EXIT has been sent,
-     * and s3eDeviceCheckQuitRequest() will return true.
-     */
-    S3E_DEVICE_STATE_EXITING ,
-
-    /**
-     * Normal running
-     */
-    S3E_DEVICE_STATE_RUNNING 
- ;
-
-/**
- * Device notifications.
- * The following callback types can be registered to enable user notification of device events.
- * For all device notifications, the @e systemData parameter passed to the callback will be NULL,
- * unless specified.
- * @par Required Header Files
- * s3eDevice.h
- */
-cenum s3eDeviceCallback =
-    /**
-     * This allows you to create a callback when the user application has been
-     * suspended, for example during a phone call or when the application has lost focus.
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return No return value is expected.
-     */
-    S3E_DEVICE_PAUSE             ,
-
-    /**
-     * This allows you to create a callback when the user application has been resumed after being suspended.
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return No return value is expected.
-     */
-    S3E_DEVICE_UNPAUSE           ,
-
-    /**
-     * This allows you to create a callback when the OS has requested that application exits.
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return No return value is expected.
-     */
-    S3E_DEVICE_EXIT              ,
-
-    /**
-     * This allows you to create a callback when the user wants to increase the
-     * sound volume.
-     *
-     * Any callback created to respond to this event should conform to the
-     * following:
-     *
-     * @param systemData This points to an instance of @ref s3eDeviceVolChangeInfo.
-     * @return No return value is expected.
-     * @remark If this callback does not set m_OverrideDefaultBehaviour to
-     * S3E_TRUE S3E will force the default behaviour which is to increase
-     * the sound, audio and video volumes by a fixed amount (usually 32, but
-     * may vary between platforms)
-     */
-    S3E_DEVICE_VOL_UP            ,
-
-    /**
-     * This allows you to create a callback when the user wants to decrease the
-     * sound volume.
-     *
-     * Any callback created to respond to this event should conform to the
-     * following:
-     *
-     * @param systemData This points to an instance of @ref s3eDeviceVolChangeInfo.
-     * @return No return value is expected.
-     * @remark If this callback does not set m_OverrideDefaultBehaviour to
-     * S3E_TRUE S3E will force the default behaviour which is to decrease
-     * the sound, audio and video volumes by a fixed amount (usually 32, but
-     * may vary between platforms)
-     */
-    S3E_DEVICE_VOL_DOWN          ,
-
-    /**
-     * This allows you to create a callback which will be called when the mains power
-     * status has changed.
-     * Specifically it is called when an external power source is connected or disconnected.
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This points to a s3eDeviceStateChangeInfo structure.
-     * The m_State member of s3eDeviceStateChangeInfo is set by the callback to 1 if
-     * the change in device state is that it is now connected to mains power,
-     * or 0 if its new state is that it has been disconnected from mains power.
-     * @return No return value is expected.
-     */
-    S3E_DEVICE_MAINS_POWER_CHANGED      ,
-
-    /**
-     * When the icf setting "SysAppNeverSleep" has been set, than the application
-     * can be put in the background and still be active
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return No return value is expected.
-     */
-    S3E_DEVICE_BACKGROUND  ,
-
-    /**
-     * This is the opposite callback correlating to S3E_DEVICE_BACKGROUND
-     * can be put in the background and still be active
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return No return value is expected
-     */
-    S3E_DEVICE_FOREGROUND  ,
-
-    /**
-     * This allows you to create a callback which will be called when the network status
-     * changes to online
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return No return value is expected.
-     * @supported
-     * - android
-     * - ios
-     */
-    S3E_DEVICE_NETWORK_ONLINE      ,
-
-    /**
-     * This allows you to create a callback which will be called when the network status
-     * changes to offline
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return No return value is expected.
-     * @supported
-     * - android
-     * - ios
-     */
-    S3E_DEVICE_NETWORK_OFFLINE     ,
-
-    /**
-     * This allows you to override the behavior when the user clicks restart application
-     * in the simulator
-     *
-     * Any callback created to respond to this event should conform to the following:
-     *
-     * @param systemData This parameter will be NULL.
-     * @return return 1 if the callback handles the restart.
-     * @supported
-     * - windows
-     */
-    S3E_DEVICE_SIMULATOR_RESTART     ,
-
-
-    S3E_DEVICE_CALLBACK_MAX
- ;
-
-/**
- * This structure is passed as the systemData parameter to the @ref S3E_DEVICE_VOL_UP
- * and @ref S3E_DEVICE_VOL_DOWN callbacks.
- *
- * This structure informs the user whether the callback came from  @ref S3E_DEVICE_VOL_UP
- * or @ref S3E_DEVICE_VOL_DOWN (so the same function may be registered for both)
- * and allows the user to override S3E's default volume-change behaviour.
- */
-cstruct s3eDeviceVolChangeInfo
-{
-    /**
-     * This is set to S3E_TRUE if the callback is a volume up notification
-     * (@ref S3E_DEVICE_VOL_UP), or S3E_FALSE if it is a volume down
-     * notification (@ref S3E_DEVICE_VOL_DOWN)
-     */
-    m_VolUp:bool;
-
-    /**
-     * [out] This is set to S3E_FALSE on entry to the callback.
-     *
-     * If the user sets this to S3E_TRUE, S3E will not perform its default handling
-     * action for the event.
-     *
-     * The default handling action is to add or subtract a fixed amount (usually 32,
-     * but may vary between platforms) from each of the sound, audio and video device volumes.
-     *
-     * Note that if multiple callbacks are registered for either volume change event,
-     * the second and subsequent callbacks will receive the s3eDeviceVolChangeInfo from the
-     * previous callback. The value of m_OverrideDefaultBehaviour is taken from that
-     * set by the last callback in the chain.
-     */
-    m_OverrideDefaultBehaviour:bool;
-} ;
-
-/**
- * This structure is passed as the systemData parameter to the @ref S3E_DEVICE_MAINS_POWER
- * callback.
- */
-cstruct s3eDeviceStateChangeInfo
-{
-    /**
-     * New state referred to by callback.
-     */
-    m_State:int32;
-} ;
-
-/**
- * Registers a callback to be called for an operating system event.
- *
- * The available callback types are listed in @ref s3eDeviceCallback.
- * @param cbid ID of the event for which to register.
- * @param fn callback function.
- * @param userdata Value to pass to the @e userdata parameter of @e NotifyFunc.
- * @return
- *  - @ref S3E_RESULT_SUCCESS if no error occurred.
- *  - @ref S3E_RESULT_ERROR if the operation failed. Call s3eDeviceGetError()
- *         to retrieve an error code. This will return one of:
- *   - @ref S3E_DEVICE_ERR_PARAM if @e cbid is not a valid member of @ref s3eDeviceCallback or @e NotifyFunc is NULL.
- *   - @ref S3E_DEVICE_ERR_TOO_MANY If the maximum number of callbacks for this device has been exceeded.
- *   - @ref S3E_DEVICE_ERR_ALREADY_REG If (@e cbid, @e NotifyFunc) has already been registered.
- * @see s3eDeviceUnRegister
- * @note For more information on the system data passed as a parameter to the callback
- * registered using this function, see the @ref s3eDeviceCallback enum.
- * @par Required Header Files
- * s3eDevice.h
- */
-//S3E_API s3eResult s3eDeviceRegister(s3eDeviceCallback cbid, s3eCallback fn, void* userdata);
-fun s3eDeviceRegister: s3eDeviceCallback*s3eCallback*+void -> s3eResult ;
-
-/**
- * Unregister a callback for a given event.
- * @param cbid ID of the callback for which to register.
- * @param fn Callback Function.
- * @return
- * - @ref S3E_RESULT_SUCCESS if no error occurred.
- * - @ref S3E_RESULT_ERROR if the operation failed.\n
- *         Call s3eDeviceGetError() to retrieve an error code.
- *         This will return one of:
- *   - @ref S3E_FILE_ERR_PARAM if @e cbid is not a valid member of @ref s3eDeviceCallback.
- *   - @ref S3E_FILE_ERR_NOT_FOUND if @e fn is not registered for callback @e cbid.
- * @note For more information on the systemData passed as a parameter to the callback
- * registered using this function, see the s3eDeviceCallback enum.
- * @note It is not necessary to define a return value for any registered callback.
- * @see s3eDeviceRegister
- * @par Required Header Files
- * s3eDevice.h
- */
-//S3E_API s3eResult s3eDeviceUnRegister(s3eDeviceCallback cbid, s3eCallback fn);
-fun s3eDeviceUnRegister : s3eDeviceCallback*s3eCallback->s3eResult ;
-
-/**
- * Request the quit state to be set.
- * @see s3eDeviceCheckQuitRequest
- * @par Required Header Files
- * s3eDevice.h
- */
-//S3E_API void s3eDeviceRequestQuit();
-proc s3eDeviceRequestQuit : unit -> void ;
-
-/**
- * Check whether or not the application has been requested to quit. Once the quit state has been set,
- * i.e. when the @ref S3E_DEVICE_EXIT callback has been generated, it
- * will remain true until device exit.
- * @return 0 only if the application has not been quit.
- * @see s3eDeviceCheckPauseRequest
- * @par Required Header Files
- * s3eDevice.h
- */
-//S3E_API bool s3eDeviceCheckQuitRequest();
-gen s3eDeviceCheckQuitRequest : unit -> bool ;
-
-/**
- * Check whether the application has been suspended since the last call.
- * to s3eDeviceCheckPauseRequest(). The pause flag is set when the callback
- * @ref S3E_DEVICE_PAUSE is triggered, and cleared when
- * s3eDeviceCheckPauseRequest() is called.
- * @par Required Header Files
- * s3eDevice.h
- */
-// S3E_API bool s3eDeviceCheckPauseRequest();
-fun s3eDeviceCheckPauseRequest : unit -> bool ;
-
-/**
- * Reset the backlight timeout, keeping the backlight on.
- * @remark
- * A single call to this function will ensure the backlight stays on for a
- * device-specified length of time (at least 1 second). Usually the backlight
- * timeout is chosen by the user in the device settings.  If an S3E application
- * wishes to keep the backlight on for a significant duration, it should
- * repeatedly call this function, for example every frame during the desired
- * period.
- * @par Required Header Files
- * s3eDevice.h
- */
-// S3E_API void s3eDeviceBacklightOn();
-fun s3eDeviceBacklightOn : unit -> void;
-
+  
+  header "#include <s3eDevice.h>";
+  
+  /**
+   * @addtogroup s3egroup
+   * @{
+   */
+  
+  /**
+   * @defgroup deviceapigroup S3E Device Interface API Reference
+   *
+   * For more information on the Device Interface functionality provided by the
+   * S3E module, see the "S3E Device Interface Overview" section of the
+   * <em>S3E API Documentation</em>.
+   *
+   * @{
+   */
+  
+  /**
+   * Device Errors.
+   * @see s3eDeviceGetError
+   * @see s3eDeviceGetErrorString
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  
+  cenum s3eDeviceError =
+      S3E_DEVICE_ERR_NONE           ,  ///< No Error.
+      S3E_DEVICE_ERR_PARAM          ,  ///< Invalid parameter.
+      S3E_DEVICE_ERR_TOO_MANY       ,  ///< Maximum number of callbacks exceeded.
+      S3E_DEVICE_ERR_ALREADY_REG    ,  ///< The specified callback is already registered.
+      S3E_DEVICE_ERR_NOT_FOUND      ,  ///< Path not found / callback not found for removal or phone info not found.
+      S3E_DEVICE_ERR_UNAVAIL        ,  ///< Device is unavailable.
+      S3E_DEVICE_ERR_DEVICE         ,  ///< The underlying file device failed.
+      S3E_DEVICE_ERR_UNSUPPORTED    ,  ///< The action requested is not supported.
+      S3E_DEVICE_ERR_MEM            ,  ///< Out of operating system memory during operation.
+      S3E_DEVICE_ERR_GENERIC        ,  ///< Unspecified error.
+      S3E_DEVICE_ERR_INVALID_DRIVE  ,  ///< Invalid/unsupported drive specified in path.
+      S3E_DEVICE_ERR_INVALID_PATH      ///< The path could not be resolved onto the device filesytem (e.g. opening ROM://../file).
+  ;
+  
+  /**
+   * Retrieve the last error, if any, for this subdevice.
+   * @see s3eDeviceGetErrorString
+   *
+   * @remark Calling this function will retrieve the last error and then remove it
+   * from memory; therefore, any further calls to this function will not return
+   * an error unless a subsequent error has occurred.
+   *
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  
+  fun s3eDeviceGetError : unit -> s3eDeviceError ;
+  
+  /**
+   * Retrieve the last error as a string, if any, for this subdevice. This is
+   * only available in debug builds.
+   * @see s3eDeviceGetError
+   *
+   * @remark This function, as opposed to s3eDeviceGetError(), will always return
+   * the last error no matter how many times it is called. This function should not be
+   * relied upon to indicate whether an error has just occurred.
+   *
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  fun s3eDeviceGetErrorString : unit -> +char ;
+  
+  /**
+   * FPU Type.
+   * This is an enumberation of FPU types used with ARM processors.
+   * This type is returned by s3eDeviceGetInt(S3E_DEVICE_FPU).
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum fpu_type =
+      S3E_DEVICE_FPU_NONE  ,
+      S3E_DEVICE_FPU_VFP   ,
+      S3E_DEVICE_FPU_VFPV3 ,
+      S3E_DEVICE_FPU_NEON  
+  ;
+  
+  /**
+   * Device Properties
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum s3eDeviceProperty =
+      /**
+       * [read, int, string] Return the device's operating system.  When
+       * retrieved as an integer this will be one of @ref s3eDeviceOSID.  When
+       * retrieved as a string is will be the string form of the enum value with
+       * out the S3E_OS_ID_ prefix.  For OS version information use
+       * S3E_DEVICE_OS_VERSION.
+       */
+      S3E_DEVICE_OS                   ,
+  
+      /**
+       * [read, int, string] Return the device's class as an integer or a string.
+       * When read as an integer it will be one of @ref s3eDeviceClassID.
+       */
+      S3E_DEVICE_CLASS                ,
+  
+      /**
+       * [read, int, string] Return the platform-specific device type ID as an
+       * integer or string. This can be used as a way to identify the exact
+       * handset model in use. If the underlying platform supports integer model
+       * identifiers then the string property will be the string version the
+       * integer. If the underlying platform uses string identifiers then the
+       * integer property will be a hash on the the string. To retrieve a unique
+       * identifier for the specific handset, use S3E_DEVICE_HANDSET_ID.
+       */
+      S3E_DEVICE_ID                   ,
+  
+      /**
+       * [read, string] Return the device's phone number as a string.  On devices
+       * without a valid phone number, this will return the empty string.
+       */
+      S3E_DEVICE_PHONE_NUMBER         ,
+  
+      /**
+       * [read, int] Return the current language in use on the device, one of
+       * @ref s3eDeviceLanguage.
+       */
+      S3E_DEVICE_LANGUAGE             ,
+  
+      /**
+       * [read, int] Return the current state of the device, one of @ref
+       * s3eDeviceState. This can be used to query whether the device is paused
+       * or if the s3e application has been requested to quit.
+       */
+      S3E_DEVICE_STATE                ,
+  
+      /**
+       * @deprecated Use #S3E_DEVICE_MEM_FREE
+       */
+      S3E_DEVICE_FREE_RAM             ,
+  
+      /**
+       * @deprecated Use #S3E_DEVICE_MEM_TOTAL
+       */
+      S3E_DEVICE_TOTAL_RAM            ,
+  
+      /**
+       * [read, int, string] Return the CPU architecture of the device. As an
+       * integer it will return one of @ref s3eDeviceArchitecture, as a string it
+       * will return a string version of one of @ref s3eDeviceArchitecture,
+       * without the 'S3E_DEVICE_ARCHITECTURE_' prefix, e.g. "ARM4T".
+       */
+      S3E_DEVICE_ARCHITECTURE         ,
+  
+      /**
+       * [read, int, string] Return the highest version of S3E supported by the
+       * loader, as an integer or as a string. The integer is of hex format
+       * 0x00mmnnrr where mm is the major version, nn the minor version
+       * and nn the revision number. The string is of the format "m.n.r", where
+       * m,n,r are decimal version of the major, minor and revision version
+       * numbers.
+       */
+      S3E_DEVICE_S3E_VERSION          ,
+  
+      /**
+       * [read, int] Return the battery level as a percentage 0-100.
+       * If this functionality is not supported, s3eDeviceGetInt() will return 100.
+       */
+      S3E_DEVICE_BATTERY_LEVEL        ,
+  
+      /**
+       * [read, int] Returns whether the left softkey (1) or the right softkey
+       * (0) should be used as a 'back' key for menus. For example, this is 0 on
+       * Nokia/Symbian devices and 1 on BREW devices.
+       */
+      S3E_DEVICE_LEFT_SOFTKEY_IS_BACK ,
+  
+      /**
+       * [read, int] Return 1 if device is connected to a power cable, 0 if it is
+       * running on battery power.
+       * If this functionality is not supported, s3eDeviceGetInt() will return 0.
+       */
+      S3E_DEVICE_MAINS_POWER          ,
+  
+      /**
+       * [read, int, string] Return version information about the underlying OS.
+       * When retrieved as an integer top and bottom 16-bits represent the major
+       * and minor OS versions respectively.  When retrieved as a string the full
+       * OS name and version is reported.  e.g. "Linux 2.6.24", "Windows XP SP2",
+       * "Symbian 9"
+       */
+      S3E_DEVICE_OS_VERSION           ,
+  
+      /**
+       * [read, string] Return ID of the chipset.
+       * On BREW these are of the form "MSM3100", "MSM5100" etc.
+       */
+      S3E_DEVICE_CHIPSET              ,
+  
+      /**
+       * [read, write, int] When read, this property returns the exit code of the
+       * last S3E application that ran, or 0 if no previous application has run.
+       * When written to, this property set the return code of the current
+       * application. This will then be read by the s3e implementation when
+       * s3eDeviceExit() is called.
+       */
+      S3E_DEVICE_EXIT_CODE            ,
+  
+      /**
+       * [read, int] Return the type of ARM FPU present on the current device.
+       * The return value will be one of #s3eDeviceFPUType.
+       */
+      S3E_DEVICE_FPU                  ,
+  
+      /**
+       * [read, int] When read, this property returns the position of the
+       * back action softkey base on the enum s3eDeviceSoftKeyPosition.
+       */
+      S3E_DEVICE_BACK_SOFTKEY_POSITION     ,
+  
+      /**
+       * [read, int] When read, this property returns the position of the
+       * advance action softkey base on the enum s3eDeviceSoftKeyPosition.
+       */
+      S3E_DEVICE_ADVANCE_SOFTKEY_POSITION     ,
+  
+      /**
+       * [read, int, string] When read, this property returns the version
+       * of the SDK that the S3E loader shipped with.  When read as a
+       * string this has the save format as the @ref S3E_VERSION_STRING macro.
+       * When read as an int it returns the major, minor and revision numbers
+       * only in 0x00mmnnrr format.   This only time this will differ to the
+       * content MarmaladeVersion.h is when an application is build with one
+       * SDK and run using a loader from anther SDK.
+       */
+      S3E_DEVICE_SDK_VERSION,
+  
+      /**
+       * [read, string] Return the current device locale as a language-country
+       * code pair using the ISO 639 and ISO 3166 formats respectively. For
+       * example, if the device is set to English (UK) it will return "en_GB". If
+       * the device does not support providing a locale, it will return the empty
+       * string.
+       */
+      S3E_DEVICE_LOCALE,
+  
+      /**
+       * [read, string] Return the name given to the current device by the user,
+       * if they OS supports such a concept.  For example: "John's Smartphone".
+       */
+      S3E_DEVICE_NAME,
+  
+      /**
+       * [read, int] Return true of the OS supports the handling of CPU exceptions and
+       * therefore the loader can continue when an application crashes.  If this feature
+       * is available the current application will exit and the next application on the
+       * stack will then run.
+       */
+      S3E_DEVICE_SUPPORTS_SIGNAL_HANDLING,
+  
+      /**
+       * [read, int] This property returns the signal, if any, that killed the previous
+       * application.  This property is generally only meaning if the device supports
+       * handling of CPU exceptions.  The possible signals that can be returned are
+       * the same as those listed in <signal.h>
+       */
+      S3E_DEVICE_EXIT_SIGNAL,
+  
+      /**
+       * [read, int] This property returns the boolean value of the devices
+       * proximity sensoror -1 if it doesn't have one.  Possible uses include
+       * triggering audio recording when the sensor signals that the user is
+       * proximity with the device.
+       */
+      S3E_DEVICE_PROXIMITY,
+  
+      /**
+       * [read, int, string] Return a unique ID for the device handset in use, as
+       * an integer or string. This ID will be unique among all handsets
+       * available for the OS. To retrieve an ID for the <em>type</em> of device,
+       * use S3E_DEVICE_ID.  If the underlying platform supports integer model
+       * identifiers then the string property will be the string version of the
+       * integer. If the underlying platform uses string identifiers then the
+       * integer property will be a hash on the the string. The value is the
+       * IMEI on platforms that support retrieving this.
+       * Platforms which cannot provide a unique identifier will return "" or 0
+       * and set the error code to S3E_DEVICE_ERR_UNSUPPORTED.
+       * @platnote{ios} On iOS the device ID is the UDID. UDIDs are deprecated in
+       * iOS 5.0 and newer; apps should use UUIDs (CFUUIDCreate) via the EDK.
+       */
+      S3E_DEVICE_UNIQUE_ID,
+  
+      /**
+       * [read, string] Return the IMSI number of the SIM card currently inserted
+       * in the device. This is a string of 15 digits which uniquely identifies
+       * the SIM card as well as the country and carrier from which is was
+       * obtained. Platforms which do not support this feature such as the iPhone
+       * will return the empty string ("") and set the error code to
+       * S3E_DEVICE_ERR_UNSUPPORTED. Some platforms may return a partial IMSI (e.g.
+       * on bada the MSIN component will be zeroed out).
+       */
+      S3E_DEVICE_IMSI,
+  
+      /**
+       * [read] Returns S3E_TRUE if the device is in a silent mode or profile
+       * whereby all sound output is muted.
+       */
+      S3E_DEVICE_SILENT_MODE,
+  
+      /**
+       * [read] Returns the number of CPU cores on the device.
+       */
+      S3E_DEVICE_NUM_CPU_CORES,
+  
+      /**
+       * [read, int] Return the number KiB physical RAM installed on the device.
+       */
+      S3E_DEVICE_MEM_TOTAL,
+  
+      /**
+       * [read, int] Return the amount of free physical RAM available to the
+       * operating system (note: this is not the same as the memory available to
+       * S3E or to the application).  Returned value is in KiB.
+       */
+      S3E_DEVICE_MEM_FREE,
+  
+      /**
+       * [read, string] Return the device's current timezone as three or more
+       * alphabetical characters.  e.g. GMT, PST.
+       */
+      S3E_DEVICE_TIMEZONE
+      
+  ;
+  
+  /**
+   * Device OS IDs.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum s3eDeviceOSID =
+      /** Symbian OS. */
+      S3E_OS_ID_SYMBIAN       ,
+      /** Qualcomm BREW (unsupported legacy platform). */
+      S3E_OS_ID_BREW          ,
+      /** Any version of Microsoft Windows(tm). */
+      S3E_OS_ID_WINDOWS       ,
+      /** Any version of Microsoft Windows(tm) Mobile. */
+      S3E_OS_ID_WINMOBILE     ,
+      /** Any version of Linux. */
+      S3E_OS_ID_LINUX         ,
+      /** SKT or KTF WIPI. */
+      S3E_OS_ID_WIPI          ,
+      /** Nintendo DS. */
+      S3E_OS_ID_NDS           ,
+      /** ARM Semihosted environment (dev board). */
+      S3E_OS_ID_ARM_SEMIH     ,
+      /** Nucleus-based RTOS dev board. */
+      S3E_OS_ID_NUCLEUS       ,
+      /** N-Gage (unsupported legacy platform). */
+      S3E_OS_ID_NGI           ,
+      /** Microsoft Windows(tm) CE (excluding Windows Mobile). */
+      S3E_OS_ID_WINCE         ,
+      /** Sharp device running EMP chipset. */
+      S3E_OS_ID_SHARPEMP      ,
+      /** Apple OSX. */
+      S3E_OS_ID_OSX           ,
+      /** Apple iOS/iPhone OS. */
+      S3E_OS_ID_IPHONE        ,
+      /** UIQ OS. */
+      S3E_OS_ID_UIQ           ,
+      /** PS3 OS. */
+      S3E_OS_ID_PS3           ,
+      /** XBOX 360 OS. */
+      S3E_OS_ID_X360          ,
+      /** bada OS. */
+      S3E_OS_ID_BADA          ,
+      /** Android OS. */
+      S3E_OS_ID_ANDROID       ,
+      /** Palm webOS. */
+      S3E_OS_ID_WEBOS         ,
+      /** PSP OS. */
+      S3E_OS_ID_PSP           ,
+      /** Wii OS. */
+      S3E_OS_ID_WII           ,
+  // \cond HIDDEN_DEFINES
+      S3E_OS_ID_MEEGO         ,
+  // \endcond
+      /** QNX (Playbook). */
+      S3E_OS_ID_QNX           
+  ;
+  
+  /**
+   * Device class IDs.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum s3eDeviceClassID =
+      S3E_DEVICE_CLASS_UNKNOWN                    ,
+  
+      S3E_DEVICE_CLASS_SYMBIAN_GENERIC            ,
+      S3E_DEVICE_CLASS_SYMBIAN_SERIES60           ,
+      S3E_DEVICE_CLASS_SYMBIAN_SERIES60_EMULATOR  ,
+      S3E_DEVICE_CLASS_SYMBIAN_UIQ                ,
+      S3E_DEVICE_CLASS_SYMBIAN_UIQ_EMULATOR       ,
+  
+      S3E_DEVICE_CLASS_BREW_GENERIC               ,
+      S3E_DEVICE_CLASS_BREW_QCIF_3G               ,
+      S3E_DEVICE_CLASS_BREW_QCIF_25G              ,
+      S3E_DEVICE_CLASS_BREW_SQCIF_25G             ,
+      S3E_DEVICE_CLASS_BREW_QVGA_3G               ,
+  
+      S3E_DEVICE_CLASS_WINDOWS_GENERIC            ,
+  
+      S3E_DEVICE_CLASS_WINCE_GENERIC              ,
+      S3E_DEVICE_CLASS_WINMOBILE_SP               ,
+      S3E_DEVICE_CLASS_WINMOBILE_PPC              ,
+  
+      S3E_DEVICE_CLASS_LINUX_GENERIC              ,
+      S3E_DEVICE_CLASS_LINUX_DESKTOP              ,
+      S3E_DEVICE_CLASS_LINUX_EMBED                ,
+  
+      S3E_DEVICE_CLASS_WIPI_GENERIC               ,
+  
+      S3E_DEVICE_CLASS_NDS_GENERIC                ,
+      S3E_DEVICE_CLASS_NDS_NDSI                   ,
+  
+      S3E_DEVICE_CLASS_ARM_SEMIH_GENERIC          ,
+  
+      S3E_DEVICE_CLASS_NUCLEUS_GENERIC            ,
+  
+      S3E_DEVICE_CLASS_NGI_GENERIC                ,
+  
+      S3E_DEVICE_CLASS_OSX_DESKTOP                ,
+  
+      S3E_DEVICE_CLASS_IPHONE                     ,
+  
+      S3E_DEVICE_CLASS_PS3                        ,
+      S3E_DEVICE_CLASS_X360                       ,
+      S3E_DEVICE_CLASS_BADA_GENERIC               ,
+      S3E_DEVICE_CLASS_ANDROID_GENERIC            ,
+      S3E_DEVICE_CLASS_PSP                        ,
+      S3E_DEVICE_CLASS_WII                        ,
+      S3E_DEVICE_CLASS_QNX                        
+  ;
+  
+  /**
+   * Language used on device.
+   */
+  cenum s3eDeviceLanguage =
+      S3E_DEVICE_LANGUAGE_UNKNOWN         ,  //!< Unknown Language.
+      S3E_DEVICE_LANGUAGE_ENGLISH         ,  //!< English Language.
+      S3E_DEVICE_LANGUAGE_FRENCH          ,  //!< French Language.
+      S3E_DEVICE_LANGUAGE_GERMAN          ,  //!< German Language.
+      S3E_DEVICE_LANGUAGE_SPANISH         ,  //!< Spanish Language.
+      S3E_DEVICE_LANGUAGE_ITALIAN         ,  //!< Italian Language.
+      S3E_DEVICE_LANGUAGE_PORTUGUESE      ,  //!< Portuguese Language.
+      S3E_DEVICE_LANGUAGE_DUTCH           ,  //!< Dutch Language.
+      S3E_DEVICE_LANGUAGE_TURKISH         ,  //!< Turkish Language.
+      S3E_DEVICE_LANGUAGE_CROATIAN        ,  //!< Croatian Language.
+      S3E_DEVICE_LANGUAGE_CZECH           , //!< Czech Language.
+      S3E_DEVICE_LANGUAGE_DANISH          , //!< Danish Language.
+      S3E_DEVICE_LANGUAGE_FINNISH         , //!< Finnish Language.
+      S3E_DEVICE_LANGUAGE_HUNGARIAN       , //!< Hungarian Language.
+      S3E_DEVICE_LANGUAGE_NORWEGIAN       , //!< Norwegian Language.
+      S3E_DEVICE_LANGUAGE_POLISH          , //!< Polish Language.
+      S3E_DEVICE_LANGUAGE_RUSSIAN         , //!< Russian Language.
+      S3E_DEVICE_LANGUAGE_SERBIAN         , //!< Serbian Language.
+      S3E_DEVICE_LANGUAGE_SLOVAK          , //!< Slovak Language.
+      S3E_DEVICE_LANGUAGE_SLOVENIAN       , //!< Slovenian Language.
+      S3E_DEVICE_LANGUAGE_SWEDISH         , //!< Swedish Language.
+      S3E_DEVICE_LANGUAGE_UKRAINIAN       , //!< Ukrainian Language.
+      S3E_DEVICE_LANGUAGE_GREEK           , //!< Greek Language.
+      S3E_DEVICE_LANGUAGE_JAPANESE        , //!< Japanese Language
+      S3E_DEVICE_LANGUAGE_SIMPL_CHINESE   , //!< Simplified Chinese Language
+      S3E_DEVICE_LANGUAGE_TRAD_CHINESE    , //!< Traditional Chinese Language
+      S3E_DEVICE_LANGUAGE_KOREAN          , //!< Korean Language
+      S3E_DEVICE_LANGUAGE_ICELANDIC       , //!< Icelandic Language
+      S3E_DEVICE_LANGUAGE_FLEMISH         , //!< Flemish Language
+      S3E_DEVICE_LANGUAGE_THAI            , //!< Thai Language
+      S3E_DEVICE_LANGUAGE_AFRIKAANS       , //!< Afrikaans Language
+      S3E_DEVICE_LANGUAGE_ALBANIAN        , //!< Albanian Language
+      S3E_DEVICE_LANGUAGE_AMHARIC         , //!< Amharic Language
+      S3E_DEVICE_LANGUAGE_ARABIC          , //!< Arabic Language
+      S3E_DEVICE_LANGUAGE_ARMENIAN        , //!< Armenian Language
+      S3E_DEVICE_LANGUAGE_AZERBAIJANI     , //!< Azerbaijani Language
+      S3E_DEVICE_LANGUAGE_TAGALOG         , //!< Tagalog Language
+      S3E_DEVICE_LANGUAGE_BELARUSSIAN     , //!< Belarussian Language
+      S3E_DEVICE_LANGUAGE_BENGALI         , //!< Bengali Language
+      S3E_DEVICE_LANGUAGE_BULGARIAN       , //!< Bulgarian Language
+      S3E_DEVICE_LANGUAGE_BURMESE         , //!< Burmese Language
+      S3E_DEVICE_LANGUAGE_CATALAN         , //!< Catalan Language
+      S3E_DEVICE_LANGUAGE_ESTONIAN        , //!< Estonian Language
+      S3E_DEVICE_LANGUAGE_FARSI           , //!< Farsi Language
+      S3E_DEVICE_LANGUAGE_GAELIC          , //!< Gaelic Language
+      S3E_DEVICE_LANGUAGE_GEORGIAN        , //!< Georgian Language
+      S3E_DEVICE_LANGUAGE_GUJARATI        , //!< Gujarati Language
+      S3E_DEVICE_LANGUAGE_HEBREW          , //!< Hebrew Language
+      S3E_DEVICE_LANGUAGE_HINDI           , //!< Hindi Language
+      S3E_DEVICE_LANGUAGE_INDONESIAN      , //!< Indonesian Language
+      S3E_DEVICE_LANGUAGE_IRISH           , //!< Irish Language
+      S3E_DEVICE_LANGUAGE_KANNADA         , //!< Kannada Language
+      S3E_DEVICE_LANGUAGE_KAZAKH          , //!< Kazakh Language
+      S3E_DEVICE_LANGUAGE_KHMER           , //!< Khmer Language
+      S3E_DEVICE_LANGUAGE_LAO             , //!< Lao Language
+      S3E_DEVICE_LANGUAGE_LATVIAN         , //!< Latvian Language
+      S3E_DEVICE_LANGUAGE_LITHUANIAN      , //!< Lithuanian Language
+      S3E_DEVICE_LANGUAGE_MACEDONIAN      , //!< Macedonian Language
+      S3E_DEVICE_LANGUAGE_MALAY           , //!< Malay Language
+      S3E_DEVICE_LANGUAGE_MALAYALAM       , //!< Malayalam Language
+      S3E_DEVICE_LANGUAGE_MARATHI         , //!< Marathi Language
+      S3E_DEVICE_LANGUAGE_MOLDOVIAN       , //!< Moldovian Language
+      S3E_DEVICE_LANGUAGE_MONGOLIAN       , //!< Mongolian Language
+      S3E_DEVICE_LANGUAGE_PUNJABI         , //!< Punjabi Language
+      S3E_DEVICE_LANGUAGE_ROMANIAN        , //!< Romanian Language
+      S3E_DEVICE_LANGUAGE_SINHALESE       , //!< Sinhalese Language
+      S3E_DEVICE_LANGUAGE_SOMALI          , //!< Somali Language
+      S3E_DEVICE_LANGUAGE_SWAHILI         , //!< Swahili Language
+      S3E_DEVICE_LANGUAGE_TAJIK           , //!< Tajik Language
+      S3E_DEVICE_LANGUAGE_TAMIL           , //!< Tamil Language
+      S3E_DEVICE_LANGUAGE_TELUGU          , //!< Telugu Language
+      S3E_DEVICE_LANGUAGE_TIBETAN         , //!< Tibetan Language
+      S3E_DEVICE_LANGUAGE_TIGRINYA        , //!< Tigrinya Language
+      S3E_DEVICE_LANGUAGE_TURKMEN         , //!< Turkmen Language
+      S3E_DEVICE_LANGUAGE_URDU            , //!< Urdu Language
+      S3E_DEVICE_LANGUAGE_UZBEK           , //!< Uzbek Language
+      S3E_DEVICE_LANGUAGE_VIETNAMESE      , //!< Vietnamese Language
+      S3E_DEVICE_LANGUAGE_WELSH           , //!< Welsh Language
+      S3E_DEVICE_LANGUAGE_ZULU              //!< Zulu Language
+  ;
+  
+  /**
+   * Architecture returned through s3eDeviceGetInt(S3E_DEVICE_ARCHITECTURE).
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum s3eDeviceArchitecture =
+      S3E_DEVICE_ARCHITECTURE_ARM4T   ,  //!< ARM processor with v4 instruction set and thumb support.
+      S3E_DEVICE_ARCHITECTURE_ARM4    ,  //!< ARM processor with v4 instruction set and no thumb support.
+      S3E_DEVICE_ARCHITECTURE_ARM5T   ,  //!< ARM processor with v5 instruction set and thumb support.
+      S3E_DEVICE_ARCHITECTURE_ARM5TE  ,  //!< ARM processor with v5 instruction set, dsp extensions and thumb support.
+      S3E_DEVICE_ARCHITECTURE_ARM5TEJ ,  //!< ARM processor with v5 instruction set, dsp extensions, thumb and jazelle support.
+      S3E_DEVICE_ARCHITECTURE_ARM6    ,  //!< ARM processor with v6 instruction set and thumb support.
+      S3E_DEVICE_ARCHITECTURE_ARM6K   ,  //!< ARM processor with v6 instruction set, SMP extensions and thumb support.
+      S3E_DEVICE_ARCHITECTURE_ARM6T2  ,  //!< ARM processor with v6 instruction set, thumb and thumb-2 support.
+      S3E_DEVICE_ARCHITECTURE_ARM6Z   ,  //!< ARM processor with v6 instruction set and trustzone support.
+      S3E_DEVICE_ARCHITECTURE_ARM7    , //!< ARM processor with v7 instruction set, trustzone, thumb and thumb-2 support.
+      S3E_DEVICE_ARCHITECTURE_X86     ,  //!< x86 architecture.
+      S3E_DEVICE_ARCHITECTURE_PPC     , //!< PowerPC architecture.
+      S3E_DEVICE_ARCHITECTURE_AMD64   , //!< amd64 aka x86_64 architecture.
+      S3E_DEVICE_ARCHITECTURE_MIPS    , //!< MIPS architecture.
+      S3E_DEVICE_ARCHITECTURE_MAX     
+  ;
+  
+  
+  /**
+   * Position of the softkey returned through s3eDeviceGetInt(S3E_DEVICE_BACK_SOFTKEY_POSITION)
+   * or s3eDeviceGetInt(S3E_DEVICE_ADVANCE_SOFTKEY_POSITION).
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum s3eDeviceSoftKeyPosition =
+      S3E_DEVICE_SOFTKEY_BOTTOM_LEFT          ,
+      S3E_DEVICE_SOFTKEY_BOTTOM_RIGHT         ,
+      S3E_DEVICE_SOFTKEY_TOP_RIGHT            ,
+      S3E_DEVICE_SOFTKEY_TOP_LEFT             
+  ;
+  
+  /**
+   * Retrieves a string property for this subdevice.
+   * @param property property to get.
+   * @return
+   *  - A NULL-terminated property string of length >= 1 if the operation succeeded.
+   *  - The empty string ("") if the operation failed.\n
+   *    Call s3eDeviceGetError() to retrieve an error code. This will return:
+   *    @ref S3E_DEVICE_ERR_PARAM if @e property is invalid.
+   *
+   * @remark
+   * Valid properties are:
+   *  - S3E_DEVICE_OS:\n
+   *    returns one of {"SYMBIAN", "BREW", "WINDOWS", "WINMOBILE", "LINUX", "WIPI", etc...}.
+   *  - S3E_DEVICE_CLASS:\n
+   *    returns e.g. "BREW_QCIF_3G".
+   *  - S3E_DEVICE_ID:\n
+   *    Gets the device ID. This maps directly to a system-dependent device ID
+   *    therefore device IDs cannot be assumed to be unique between different
+   *    OS's. Previously unseen devices may return device IDs not in the
+   *    enumeration. For BREW see device data sheets.
+   *  - S3E_DEVICE_PHONE_NUMBER:\n
+   *    returns e.g. ("01321435345").
+   *  - S3E_DEVICE_ARCHITECTURE:\n
+   *    returns one of {"ARM4T", "ARM4", "ARM5T", "ARM5TE", "ARM5TEJ", "ARM6", "ARM6K",
+   *                    "ARM6T2", "ARM6Z", "ARM7", "x86", "PPC", "AMD64"}.
+   *  - S3E_DEVICE_S3E_VERSION:\n
+   *    returns e.g. ("2.0.1") whereas the first number represents the major version
+   *    (see S3E_VERSION_MAJOR) the second one the minor version (see
+   *    S3E_VERSION_MINOR) and the third one being the revision (see
+   *    S3E_VERSION_REVISION).
+   *
+   * @see s3eDeviceGetInt
+   */
+  
+  fun s3eDeviceGetString: s3eDeviceProperty -> +char ;
+  
+  /**
+   * Retrieves an integer property for the Device Module.
+   * @param property property to get.
+   * @return
+   *  - The value of the requested property if property is valid.
+   *  - -1 if the property is not valid.\n
+   *    Call @ref s3eDeviceGetError() to retrieve an error code. This will return:\n
+        @ref S3E_DEVICE_ERR_PARAM if @e property is not valid.
+   * @remark
+   * You can pass in the following properties to the function:
+   *  - S3E_DEVICE_OS:\n
+   *    Returns one of the @ref s3eDeviceOSID.
+   *  - S3E_DEVICE_CLASS:\n
+   *    Returns one of @ref s3eDeviceClassID; the device class.
+   *  - S3E_DEVICE_ID:\n
+   *    Gets the device ID. This maps directly to a system-dependent device ID
+   *    therefore device IDs cannot be assumed to be unique between different
+   *    OS's. Previously unseen devices may return device IDs not in the
+   *    enumeration. For BREW see device data sheets.
+   *  - S3E_DEVICE_LANGUAGE:\n
+   *    Return the current device language, which will be one of @ref s3eDeviceLanguage.
+   *  - S3E_DEVICE_MEM_TOTAL:\n
+   *    Return the total physical RAM of this device.
+   *  - S3E_DEVICE_MEM_FREE:\n
+   *    Return the free memory that is currently available to the OS. This
+   *    memory is not necessarily available to the s3e application.
+   *  - S3E_DEVICE_ARCHITECTURE:\n
+   *    Returns one of the @ref s3eDeviceArchitecture.
+   *  - S3E_DEVICE_S3E_VERSION:\n
+   *    Returns S3E_VERSION.
+   *
+   * @see s3eDeviceGetString
+   */
+  fun s3eDeviceGetInt : s3eDeviceProperty -> int32 ;
+  
+  /**
+   * Sets an integer property for the Device module.
+   * @param property property to set.
+   * @param value New value for property.
+   * @see s3eDeviceGetInt
+   * @return
+   * - @ref S3E_RESULT_SUCCESS if no error occurred.
+   * - @ref S3E_RESULT_ERROR if the operation failed.\n
+   *         Call s3eDeviceGetError() to retrieve an error code.
+   *         This will return:
+   *   - @ref S3E_FILE_ERR_PARAM if @e property is invalid or @e value is invalid.
+   * You can pass in the following property to the function:
+   *  - S3E_DEVICE_EXIT_CODE:\n
+   *    Sets the return code of the current application.
+   *
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  
+  fun s3eDeviceSetInt : s3eDeviceProperty*int32 -> s3eResult ;
+  
+  const S3E_DEVICE_YIELD_FOREVER : int32 = "S3E_DEVICE_YIELD_FOREVER";
+  const S3E_DEVICE_YIELD_NO_CALLBACKS : int32 = "S3E_DEVICE_YIELD_NO_CALLBACKS";
+  
+  /**
+   * Yield to the OS for a specified period of time.
+   * @param ms Maximum number of milliseconds to yield. If this is zero, s3eDeviceYield()
+   *           performs a minimal yield to the OS and fires any events generated
+   *           from the OS devices.  If this is S3E_DEVICE_YIELD_FOREVER,
+   *           s3eDeviceYield() will not return until either a quit request is received
+   *           or s3eDeviceUnYield() is called (e.g. from a callback). If this is
+   *           S3E_DEVICE_YIELD_NO_CALLBACKS, a minimal yield to the OS is done, but no
+   *           callbacks will be dispatched.
+   * @remark This also allows the OS to do any required processing for this
+   *         application, for example processing Device or UI messages.
+   * It may also permit the CPU to enter a low-power state.
+   * If ms is zero, S3E will yield for the minimum amount of time required by the
+   * underlying OS to perform essential processing. Therefore the S3E Application
+   * should call s3eDeviceYield(0) frequently to enable the underlying OS to
+   * respond in a timely manner to external events. S3E ensures that
+   * s3eDeviceYield(0) can be called very frequently (more that once a
+   * millisecond) with very little overhead.
+   * If ms is non-zero S3E will allow the OS to perform necessary processing and
+   * return control to the caller after ms milliseconds.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  //S3E_API int64 s3eDeviceYield(int32 ms S3E_DEFAULT(0));
+  //gen s3eDeviceYieldAndGetTime : int32 -> int64 ;
+  //gen s3eDeviceYieldAndGetTime : unit -> int64 ;
+  proc s3eDeviceYield : !ints;
+  proc s3eDeviceYield : unit;
+  
+  /**
+   * Exits the top-level yield.
+   * @see s3eDeviceYield
+   * @see s3eDeviceYieldUntilEvent
+   * @remark
+   * This function should be called from within a callback. It will cause the call
+   * to s3eDeviceYield(), during which the callback was generated, to exit immediately
+   * without completing the remainder of the yield duration.
+   *
+   * This can be used for example, to wait for specific events by calling
+   * s3eDeviceYield(S3E_DEVICE_YIELD_FOREVER) then calling s3eDeviceUnYield()
+   * in the callback for a specific event.
+   *
+   * If s3eDeviceYield() has been called recursively (i.e. a callback has called
+   * s3eDeviceYield()) then s3eDeviceUnYield() will only exit the last call to
+   * s3eDeviceYield(). Calling s3eDeviceUnYield() followed by s3eDeviceYield()
+   * will cancel the call to s3eDeviceUnYield().
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  //S3E_API void s3eDeviceUnYield();
+  fun s3eDeviceUnYield : unit -> void ;
+  
+  /**
+   * Yields until an event.
+   * @param ms Maximum time to yield for. If this is zero or
+   * S3E_DEVICE_YIELD_FOREVER, s3eDeviceYieldUntilEvent() will yield forever
+   * (note that this is different to s3eDeviceYield)
+   * @see s3eDeviceYield
+   * @see s3eDeviceUnYield
+   * @remark
+   * This function yields until any callback event occurs. The yield will
+   * exit whether or not a callback is registered for the event.
+   *
+   * Callback events include input events (see @ref s3eKeyboardCallback),
+   * network events (see @ref s3eSocketCallback) and operating system
+   * events (see @ref s3eDeviceCallback). Therefore calling this function is
+   * a good way of reducing CPU usage when waiting for external events,
+   * for example in application menus.
+   * Sound channel callbacks (see @ref s3eSoundChannelCallback) do not cause
+   * s3eDeviceYieldUntilEvent to return.
+   *
+   * If application exit has been requested (see @ref s3eDeviceRequestQuit
+   * and @ref s3eDeviceCheckQuitRequest) then this function will perform
+   * s3eDeviceYield(0) and return immediately.
+   *
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  // S3E_API void s3eDeviceYieldUntilEvent(int32 ms S3E_DEFAULT(S3E_DEVICE_YIELD_FOREVER));
+  fun s3eDeviceYieldUntilEvent : int32 -> void ;
+  fun s3eDeviceYieldUntilEvent : unit -> void ;
+  
+  
+  /**
+   * Exit the current s3e application.
+   * @param code The return code that will be available to the parent application.
+   * This will exit the current s3e application immediately. All resources
+   * consumed by the application will be cleared-up automatically.
+   * Static destructors for globally-defined classes and atexit() registered
+   * functions will not be called.  If this behaviour is desired then the user
+   * should exit the main() function normally. If another s3e application is set
+   * to execute via s3eDeviceExecPushNext(), it will be executed.
+   * If you want to return a non-zero exit code to the S3E layer use the
+   * S3E_DEVICE_EXIT_CODE property.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  // S3E_API void s3eDeviceExit(int code S3E_DEFAULT(0)) NO_RETURN;
+  fun s3eDeviceExit : int -> void ;
+  fun s3eDeviceExit : unit -> void ;
+  
+  /**
+   * Device state.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum s3eDeviceState =
+      /**
+       * Paused. The @ref S3E_DEVICE_PAUSE notification has been sent, and
+       * @ref S3E_DEVICE_UNPAUSE has not been sent.
+       */
+      S3E_DEVICE_STATE_PAUSED  ,
+  
+      /**
+       * Exiting the application. The @ref S3E_DEVICE_EXIT has been sent,
+       * and s3eDeviceCheckQuitRequest() will return true.
+       */
+      S3E_DEVICE_STATE_EXITING ,
+  
+      /**
+       * Normal running
+       */
+      S3E_DEVICE_STATE_RUNNING 
+   ;
+  
+  /**
+   * Device notifications.
+   * The following callback types can be registered to enable user notification of device events.
+   * For all device notifications, the @e systemData parameter passed to the callback will be NULL,
+   * unless specified.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  cenum s3eDeviceCallback =
+      /**
+       * This allows you to create a callback when the user application has been
+       * suspended, for example during a phone call or when the application has lost focus.
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return No return value is expected.
+       */
+      S3E_DEVICE_PAUSE             ,
+  
+      /**
+       * This allows you to create a callback when the user application has been resumed after being suspended.
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return No return value is expected.
+       */
+      S3E_DEVICE_UNPAUSE           ,
+  
+      /**
+       * This allows you to create a callback when the OS has requested that application exits.
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return No return value is expected.
+       */
+      S3E_DEVICE_EXIT              ,
+  
+      /**
+       * This allows you to create a callback when the user wants to increase the
+       * sound volume.
+       *
+       * Any callback created to respond to this event should conform to the
+       * following:
+       *
+       * @param systemData This points to an instance of @ref s3eDeviceVolChangeInfo.
+       * @return No return value is expected.
+       * @remark If this callback does not set m_OverrideDefaultBehaviour to
+       * S3E_TRUE S3E will force the default behaviour which is to increase
+       * the sound, audio and video volumes by a fixed amount (usually 32, but
+       * may vary between platforms)
+       */
+      S3E_DEVICE_VOL_UP            ,
+  
+      /**
+       * This allows you to create a callback when the user wants to decrease the
+       * sound volume.
+       *
+       * Any callback created to respond to this event should conform to the
+       * following:
+       *
+       * @param systemData This points to an instance of @ref s3eDeviceVolChangeInfo.
+       * @return No return value is expected.
+       * @remark If this callback does not set m_OverrideDefaultBehaviour to
+       * S3E_TRUE S3E will force the default behaviour which is to decrease
+       * the sound, audio and video volumes by a fixed amount (usually 32, but
+       * may vary between platforms)
+       */
+      S3E_DEVICE_VOL_DOWN          ,
+  
+      /**
+       * This allows you to create a callback which will be called when the mains power
+       * status has changed.
+       * Specifically it is called when an external power source is connected or disconnected.
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This points to a s3eDeviceStateChangeInfo structure.
+       * The m_State member of s3eDeviceStateChangeInfo is set by the callback to 1 if
+       * the change in device state is that it is now connected to mains power,
+       * or 0 if its new state is that it has been disconnected from mains power.
+       * @return No return value is expected.
+       */
+      S3E_DEVICE_MAINS_POWER_CHANGED      ,
+  
+      /**
+       * When the icf setting "SysAppNeverSleep" has been set, than the application
+       * can be put in the background and still be active
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return No return value is expected.
+       */
+      S3E_DEVICE_BACKGROUND  ,
+  
+      /**
+       * This is the opposite callback correlating to S3E_DEVICE_BACKGROUND
+       * can be put in the background and still be active
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return No return value is expected
+       */
+      S3E_DEVICE_FOREGROUND  ,
+  
+      /**
+       * This allows you to create a callback which will be called when the network status
+       * changes to online
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return No return value is expected.
+       * @supported
+       * - android
+       * - ios
+       */
+      S3E_DEVICE_NETWORK_ONLINE      ,
+  
+      /**
+       * This allows you to create a callback which will be called when the network status
+       * changes to offline
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return No return value is expected.
+       * @supported
+       * - android
+       * - ios
+       */
+      S3E_DEVICE_NETWORK_OFFLINE     ,
+  
+      /**
+       * This allows you to override the behavior when the user clicks restart application
+       * in the simulator
+       *
+       * Any callback created to respond to this event should conform to the following:
+       *
+       * @param systemData This parameter will be NULL.
+       * @return return 1 if the callback handles the restart.
+       * @supported
+       * - windows
+       */
+      S3E_DEVICE_SIMULATOR_RESTART     ,
+  
+  
+      S3E_DEVICE_CALLBACK_MAX
+   ;
+  
+  /**
+   * This structure is passed as the systemData parameter to the @ref S3E_DEVICE_VOL_UP
+   * and @ref S3E_DEVICE_VOL_DOWN callbacks.
+   *
+   * This structure informs the user whether the callback came from  @ref S3E_DEVICE_VOL_UP
+   * or @ref S3E_DEVICE_VOL_DOWN (so the same function may be registered for both)
+   * and allows the user to override S3E's default volume-change behaviour.
+   */
+  cstruct s3eDeviceVolChangeInfo
+  {
+      /**
+       * This is set to S3E_TRUE if the callback is a volume up notification
+       * (@ref S3E_DEVICE_VOL_UP), or S3E_FALSE if it is a volume down
+       * notification (@ref S3E_DEVICE_VOL_DOWN)
+       */
+      m_VolUp:bool;
+  
+      /**
+       * [out] This is set to S3E_FALSE on entry to the callback.
+       *
+       * If the user sets this to S3E_TRUE, S3E will not perform its default handling
+       * action for the event.
+       *
+       * The default handling action is to add or subtract a fixed amount (usually 32,
+       * but may vary between platforms) from each of the sound, audio and video device volumes.
+       *
+       * Note that if multiple callbacks are registered for either volume change event,
+       * the second and subsequent callbacks will receive the s3eDeviceVolChangeInfo from the
+       * previous callback. The value of m_OverrideDefaultBehaviour is taken from that
+       * set by the last callback in the chain.
+       */
+      m_OverrideDefaultBehaviour:bool;
+  } ;
+  
+  /**
+   * This structure is passed as the systemData parameter to the @ref S3E_DEVICE_MAINS_POWER
+   * callback.
+   */
+  cstruct s3eDeviceStateChangeInfo
+  {
+      /**
+       * New state referred to by callback.
+       */
+      m_State:int32;
+  } ;
+  
+  /**
+   * Registers a callback to be called for an operating system event.
+   *
+   * The available callback types are listed in @ref s3eDeviceCallback.
+   * @param cbid ID of the event for which to register.
+   * @param fn callback function.
+   * @param userdata Value to pass to the @e userdata parameter of @e NotifyFunc.
+   * @return
+   *  - @ref S3E_RESULT_SUCCESS if no error occurred.
+   *  - @ref S3E_RESULT_ERROR if the operation failed. Call s3eDeviceGetError()
+   *         to retrieve an error code. This will return one of:
+   *   - @ref S3E_DEVICE_ERR_PARAM if @e cbid is not a valid member of @ref s3eDeviceCallback or @e NotifyFunc is NULL.
+   *   - @ref S3E_DEVICE_ERR_TOO_MANY If the maximum number of callbacks for this device has been exceeded.
+   *   - @ref S3E_DEVICE_ERR_ALREADY_REG If (@e cbid, @e NotifyFunc) has already been registered.
+   * @see s3eDeviceUnRegister
+   * @note For more information on the system data passed as a parameter to the callback
+   * registered using this function, see the @ref s3eDeviceCallback enum.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  //S3E_API s3eResult s3eDeviceRegister(s3eDeviceCallback cbid, s3eCallback fn, void* userdata);
+  fun s3eDeviceRegister: s3eDeviceCallback*s3eCallback*+void -> s3eResult ;
+  
+  /**
+   * Unregister a callback for a given event.
+   * @param cbid ID of the callback for which to register.
+   * @param fn Callback Function.
+   * @return
+   * - @ref S3E_RESULT_SUCCESS if no error occurred.
+   * - @ref S3E_RESULT_ERROR if the operation failed.\n
+   *         Call s3eDeviceGetError() to retrieve an error code.
+   *         This will return one of:
+   *   - @ref S3E_FILE_ERR_PARAM if @e cbid is not a valid member of @ref s3eDeviceCallback.
+   *   - @ref S3E_FILE_ERR_NOT_FOUND if @e fn is not registered for callback @e cbid.
+   * @note For more information on the systemData passed as a parameter to the callback
+   * registered using this function, see the s3eDeviceCallback enum.
+   * @note It is not necessary to define a return value for any registered callback.
+   * @see s3eDeviceRegister
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  //S3E_API s3eResult s3eDeviceUnRegister(s3eDeviceCallback cbid, s3eCallback fn);
+  fun s3eDeviceUnRegister : s3eDeviceCallback*s3eCallback->s3eResult ;
+  
+  /**
+   * Request the quit state to be set.
+   * @see s3eDeviceCheckQuitRequest
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  //S3E_API void s3eDeviceRequestQuit();
+  proc s3eDeviceRequestQuit : unit -> void ;
+  
+  /**
+   * Check whether or not the application has been requested to quit. Once the quit state has been set,
+   * i.e. when the @ref S3E_DEVICE_EXIT callback has been generated, it
+   * will remain true until device exit.
+   * @return 0 only if the application has not been quit.
+   * @see s3eDeviceCheckPauseRequest
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  //S3E_API bool s3eDeviceCheckQuitRequest();
+  gen s3eDeviceCheckQuitRequest : unit -> bool ;
+  
+  /**
+   * Check whether the application has been suspended since the last call.
+   * to s3eDeviceCheckPauseRequest(). The pause flag is set when the callback
+   * @ref S3E_DEVICE_PAUSE is triggered, and cleared when
+   * s3eDeviceCheckPauseRequest() is called.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  // S3E_API bool s3eDeviceCheckPauseRequest();
+  fun s3eDeviceCheckPauseRequest : unit -> bool ;
+  
+  /**
+   * Reset the backlight timeout, keeping the backlight on.
+   * @remark
+   * A single call to this function will ensure the backlight stays on for a
+   * device-specified length of time (at least 1 second). Usually the backlight
+   * timeout is chosen by the user in the device settings.  If an S3E application
+   * wishes to keep the backlight on for a significant duration, it should
+   * repeatedly call this function, for example every frame during the desired
+   * period.
+   * @par Required Header Files
+   * s3eDevice.h
+   */
+  // S3E_API void s3eDeviceBacklightOn();
+  fun s3eDeviceBacklightOn : unit -> void;
+  
+  /*-----------------
+   Felix add-ons 
+   ------------------*/
+  
+  proc s3e_mainloop(body : unit -> void) = {
+    while s3eDeviceCheckQuitRequest() == false do
+      call body();
+      s3eDeviceYield();
+    done
+  }
 
 }
 

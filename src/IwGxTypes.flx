@@ -1,0 +1,278 @@
+include "IwColour";
+include "IwGeomVec";
+
+open class IwGxTypes {
+  header "#include <IwGxTypes.h>";
+
+  // Screenspace to subpixelspace shift.
+  const IW_GX_SHIFT_SS2SP:int;
+  
+  // Subpixelspace to viewspace shift.
+  const IW_GX_SHIFT_SP2VS:int;
+  
+  // Max length of fixed index buffer for unindexed streams.
+  const IW_GX_DRAW_UNINDEXED_STREAM_MAX:uint32;
+  
+  //-----------------------------------------------------------------------------
+  // Screen orientations
+  //-----------------------------------------------------------------------------
+  /**
+   * Screen orientations, as inputs to IwGxSetScreenOrient.
+   * @par Required Header Files
+   * IwGxTypes.h
+   */
+  cenum IwGxScreenOrient =
+      IW_GX_ORIENT_NONE,      //!< no orientation.
+      IW_GX_ORIENT_90,        //!< rotate 90 degrees.
+      IW_GX_ORIENT_180,       //!< rotate 180 degrees.
+      IW_GX_ORIENT_270       //!< rotate 270 degrees.
+  ;
+  
+  fun GetInverseOrient : IwGxScreenOrient -> IwGxScreenOrient;
+
+  //-----------------------------------------------------------------------------
+  // CIwRect
+  //-----------------------------------------------------------------------------
+  /**
+   * General rectangle, 16-bit members.
+   */
+  cstruct CIwRect {
+      x:int16;  //!< x coordinate
+      y:int16;  //!< y coordinate
+      w:int16;  //!< width
+      h:int16;  //!< height
+  };
+  
+    
+      /**
+       * Constructor.
+       * @par Required Header Files
+   * IwGxTypes.h
+   */
+      //CIwRect() {}
+  
+      /**
+       * Constructor.
+       * @param _x X coordinate.
+       * @param _y Y coordinate.
+       * @param _w Width.
+       * @param _h Height.
+       * @par Required Header Files
+   * IwGxTypes.h
+   */
+      //CIwRect(int16 _x, int16 _y, int16 _w, int16 _h) : x(_x), y(_y), w(_w), h(_h) {}
+  
+      /**
+       * Set all members.
+       * @param _x X coordinate.
+       * @param _y Y coordinate.
+       * @param _w Width.
+       * @param _h Height.
+       * @par Required Header Files
+   * IwGxTypes.h
+   */
+      //inline void Make(int16 _x, int16 _y, int16 _w, int16 _h) {x = _x, y = _y, w = _w, h =_h;}
+  
+proc Rotate : CIwRect * IwGxScreenOrient * int32 * int32 = "$1.Rotate($b);";
+  
+  //-----------------------------------------------------------------------------
+  // CIwRect32
+  //-----------------------------------------------------------------------------
+  
+  /**
+   * General rectangle, 32-bit members.
+   */
+  cstruct CIwRect32 {
+      x:int32;  //!< x coordinate
+      y:int32;  //!< y coordinate
+      w:int32;  //!< width
+      h:int32;  //!< height
+  };
+  
+  fun == : CIwRect32 -> bool = "$1 == $2";
+
+  //-----------------------------------------------------------------------------
+  // CIwLight
+  //-----------------------------------------------------------------------------
+  /**
+   * Light types.
+   * @par Required Header Files
+   * IwGxTypes.h
+   */
+  cenum IwGxLightType =
+      IW_GX_LIGHT_UNUSED,         //!< light type has not been set.
+      IW_GX_LIGHT_AMBIENT,        //!< ambient light.
+      IW_GX_LIGHT_DIFFUSE        //!< diffuse light.
+  ;
+
+  
+  //! Maximum number of lights supported
+  const IW_GX_LIGHTS_MAX : int;
+  
+  //-----------------------------------------------------------------------------
+  // Coordinate spaces
+  //-----------------------------------------------------------------------------
+  /**
+   * Coordinate spaces for geometry streams.
+   * @par Required Header Files
+   * IwGxTypes.h
+   */
+  cenum IwGxCoordSpace =
+      IW_GX_WORLDSPACE,       //!< worldspace.
+      IW_GX_MODELSPACE,       //!< modelspace.
+      IW_GX_VIEWSPACE,        //!< viewspace.
+      IW_GX_SCREENSPACE,      //!< screenspace.
+      IW_GX_VIEWSPACE_32,     //!< viewspace (32-bit vertices).
+  
+      IW_GX_COORDSPACE_NONE //!< No coordspace
+  
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // Cull results
+  //-----------------------------------------------------------------------------
+  /**
+   * Enumerated results of viewspace backface culling, considering material settings.
+   * @par Required Header Files
+   * IwGxTypes.h
+   */
+  cenum IwGxCullResult =
+      IW_GX_CULL_RESULT_FAIL,     //!< cull failed - do not draw polygon.
+      IW_GX_CULL_RESULT_PASS,     //!< cull passed - draw polygon with default ordering.
+      IW_GX_CULL_RESULT_REVERSE,  //!< cull passed - draw polygon with reverse ordering.
+      IW_GX_CULL_RESULT_DRAW_BOTH //!< cull uncertain - draw polygon both ways around
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // Primtive types
+  //-----------------------------------------------------------------------------
+  /**
+   * Primitive types, as inputs to IwGxDrawPrims.
+   * @par Required Header Files
+   * IwGxTypes.h
+   */
+  cenum IwGxPrimType =
+      IW_GX_TRI_LIST,         //!< triangle list.
+      IW_GX_TRI_STRIP,        //!< triangle strip.
+      IW_GX_TRI_FAN,          //!< triangle fan.
+      IW_GX_QUAD_LIST,        //!< quadrilateral list.
+      IW_GX_QUAD_STRIP,       //!< quadrilateral strip.
+      IW_GX_LINE_LIST,        //!< line list.
+      IW_GX_LINE_STRIP,       //!< line strip.
+      IW_GX_SPRITE_LIST,      //!< sprite list.
+      IW_GX_NPOLY_LIST       //!< N-poly list.
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // Sorting types
+  //-----------------------------------------------------------------------------
+  /**
+   * Sort modes for HW geometry batches
+   */
+  cenum IwGxSortMode =
+      IW_GX_SORT_NONE,        //!< cache all drawn geometry so that it is flushed in the order it was submitted.
+      IW_GX_SORT_BY_MATERIAL, //!< cache all drawn geometry so that it is ordered by material FIFO when flushed.
+      IW_GX_SORT_BY_Z,        //!< cache all drawn geometry so that it is ordered by Z when flushed.
+      IW_GX_SORT_BY_SLOT,     //!< cache all drawn geometry and render in order specified by each material/coordinate space type
+  
+      IW_GX_SORT_REVERSE,  //!< cache all drawn geometry so that it is flushed in the reverse order to that it was submitted.
+      IW_GX_SORT_BY_MATERIAL_REVERSE,  //!< cache all drawn geometry so that it is ordered by material FILO when flushed.
+      IW_GX_SORT_BY_Z_REVERSE     //!< cache all drawn geometry so that it is reverse ordered by Z when flushed.
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // Clear flags
+  //-----------------------------------------------------------------------------
+  cenum IwGxClearBufferFlags = //renamed to avoid conflict with function IwGxClearFlags()
+      IW_GX_COLOUR_BUFFER_F, //!< clear colour buffer
+      IW_GX_DEPTH_BUFFER_F //!< clear depth buffer
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // Material copy states
+  //-----------------------------------------------------------------------------
+  cenum IwGxMaterialCopyState =
+      IW_GX_MATERIAL_COPY_STATE_COLS,         //!< Copy emissive, ambient and diffuse colours (from material to IwGxState).
+      IW_GX_MATERIAL_COPY_STATE_ZDEPTHOFS,    //!< Copy z-depth offset (from material to IwGxState).
+      IW_GX_MATERIAL_COPY_STATE_UVOFS,        //!< Copy UV offset (from material to IwGxState).
+      IW_GX_MATERIAL_COPY_STATE_MAX
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // HW types
+  //-----------------------------------------------------------------------------
+  /**
+   * Current renderer type
+   * @par Required Header Files
+   * IwGxTypes.h
+   */
+  cenum IwGxHWType =
+      IW_GX_HWTYPE_UNKNOWN,
+      IW_GX_HWTYPE_SW,                        //!< I3D Software Renderer
+      IW_GX_HWTYPE_GL1,                       //!< OpenGL ES 1.x Renderer
+      IW_GX_HWTYPE_GL2,                       //!< OpenGL ES 2.x Renderer
+      IW_GX_HWTYPE_DS,                        // Nintendo DS Renderer
+      IW_GX_HWTYPE_D3DM,                      // D3D Mobile Renderer
+      IW_GX_HWTYPE_D3D9,
+      IW_GX_HWTYPE_PS3,
+      IW_GX_HWTYPE_PSP,
+      IW_GX_HWTYPE_WII
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // GL extensions
+  //-----------------------------------------------------------------------------
+  cenum IwGxGLExtension =
+      GL_IMG_TEXTURE_COMPRESSION_PVRTC,
+      GL_ATI_COMPRESSED_TEXTURE_ATITC,
+      GL_OES_COMPRESSED_ETC1_RGB8_TEXTURE,
+      GL_EXT_TEXTURE_COMPRESSION_S3TC,
+      GL_EXT_TEXTURE_COMPRESSION_DXT1
+  ;
+  
+  //-----------------------------------------------------------------------------
+  // Render quality
+  //-----------------------------------------------------------------------------
+  cenum IwGxRenderQuality =
+      IW_GX_RENDER_QUALITY_HALF,
+      IW_GX_RENDER_QUALITY_HALF_INTERP,
+      IW_GX_RENDER_QUALITY_NORMAL,
+      IW_GX_RENDER_QUALITY_MAX
+  ;
+  
+  
+  //-----------------------------------------------------------------------------
+  // Textures
+  //-----------------------------------------------------------------------------
+  
+  
+  // Maximum number textures per material
+  const IW_GX_MATERIAL_TEXTURES_MAX:int;
+  
+  // Maximum number of uv sets per geometry
+  const IW_GX_UV_SETS_MAX:int;
+  
+  
+  //-----------------------------------------------------------------------------
+  // Callbacks
+  //-----------------------------------------------------------------------------
+  
+  // Generic callback
+  typedef IwGxCallbackFn = +void; // void (*)();
+  
+  // Callback that takes a progress parameter (in fixed point)
+  typedef IwGxProgressCallbackFn = +void;
+  
+  cenum IwGxCallback =
+      _IW_GX_NONE,        // PRIVATE: No event
+      IW_GX_PRE_FLUSH,    //!< Raised before a non-empty flush
+      IW_GX_SCREENSIZE   //!< Raised after a screen size change (IwGxGetScreenWidth() etc. will return the new size)
+  ;
+  
+  
+  cstruct _IwGxCallbackRegistration {
+      m_CallbackID : IwGxCallback ;
+      m_CallbackFn : IwGxCallbackFn ;
+  };
+  
+}

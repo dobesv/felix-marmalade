@@ -1,0 +1,10 @@
+
+open class IwMaterial {
+
+  header "#include <IwMaterial.h>";
+  
+  cstruct CIwMaterial {
+  
+  };
+  
+}

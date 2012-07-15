@@ -1,0 +1,49 @@
+include "IwGeomCore";
+
+open class IwGeomVec3 {
+  
+  header "#include <IwGeomVec3.h>";
+  
+  cstruct CIwVec3 {
+      x:int32; //!< x-coordinate of the vector
+      y:int32; //!< y-coordinate of the vector
+      z:int32; //!< z-coordinate of the vector
+  };
+
+  const Zero : CIwVec3 = "CIwVec3::g_Zero";
+  const AxisX : CIwVec3 = "CIwVec3::g_AxisX";
+  const AxisY : CIwVec3 = "CIwVec3::g_AxisY";
+  const AxisZ : CIwVec3 = "CIwVec3::g_AxisZ";
+
+  ctor CIwVec3 : int32^3 = "CIwVec3($a)";
+  ctor CIwVec3 : CIwVec3 = "CIwVec3($a)";
+  ctor CIwVec3 : CIwFVec3 = "CIwVec3($a)";
+  
+  fun GetLength : CIwVec3 -> int32 = "$1.GetLength()";
+  fun GetLengthSquared : CIwVec3 -> int32 = "$1.GetLengthSquared()";    
+  fun GetLengthSafe : CIwVec3 -> int32 = "$1.GetLengthSafe()";    
+  fun GetLengthSquaredSafe : CIwVec3 -> int32 = "$1.GetLengthSquaredSafe()";    
+  fun GetLengthSquaredUnshifted : CIwVec3 -> int32 = "$1.GetLengthSquaredUnshifted()";    
+  proc NormaliseSlow : CIwVec3 = "$1.NormaliseSlow();";
+  proc Normalise : CIwVec3 = "$1.Normalise();";
+  fun GetNormalised : CIwVec3 -> CIwVec3 = "$1.GetNormalised()";
+  proc Normalise : CIwVec3 = "$1.NormaliseSafe();";
+  fun GetNormalisedSafe : CIwVec3 -> CIwVec3 = "$1.GetNormalisedSafe()";
+  fun IsNormalised : CIwVec3 -> bool = "$1.IsNormalised()";
+  proc Serialise : CIwVec3 = "$1.Serialise();";
+  fun IsNormalised : CIwVec3 -> bool = "$1.IsZero()";
+  fun Dot : CIwVec3*CIwVec3 -> int32 = "$1.Dot($2)";
+  fun Cross : CIwVec3*CIwVec3 -> int32 = "$1.Cross($2)";
+  fun + : CIwVec3*CIwVec3 -> CIwVec3 = "$1 + $2";
+  fun - : CIwVec3*CIwVec3 -> CIwVec3 = "$1 - $2";
+  fun * : CIwVec3*CIwVec3 -> int32 = "$1 * $2";
+  fun ^ : CIwVec3*CIwVec3 -> int32 = "$1 ^ $2";
+  fun == : CIwVec3*CIwVec3 -> bool = "$1 == $2";
+  fun != : CIwVec3*CIwVec3 -> bool = "$1 != $2";
+  fun - : CIwVec3 -> CIwVec3 = "- $1";
+  fun * : CIwVec3 * iwfixed -> CIwVec3 = "$1 * $2";
+  fun / : CIwVec3 * iwfixed -> CIwVec3 = "$1 / $2";
+  fun >> : CIwVec3 * !ints -> CIwVec3 = "$1 >> $2";
+  fun << : CIwVec3 * !ints -> CIwVec3 = "$1 << $2";
+  fun subscript : CIwVec3 * !ints -> int32 = "$1[$2]";
+}

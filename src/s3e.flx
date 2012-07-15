@@ -33,9 +33,6 @@ open class s3e {
   inherit s3eDevice;
   inherit s3eSurface;
   
-  body "#define FLX_SUPPORT_ASYNC 0";
-  body "#define FELIX_MAIN main";
-  body '#include "flx_run.include"';
   
 }
 

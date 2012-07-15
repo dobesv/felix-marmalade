@@ -1,0 +1,11 @@
+
+
+open class IwGxStream {
+
+  header "#include <IwGxStream.h>";
+  
+  cstruct CIwGxStream {
+  
+  };
+  
+}

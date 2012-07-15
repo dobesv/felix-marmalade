@@ -1,27 +1,27 @@
-class s3eTypes {
+open class s3eTypes {
 
-header "#include <s3eTypes.h>";
-
-/**
- * Generic S3E result type.
- * @par Required Header Files
- * s3eTypes.h
- */
-cenum s3eResult =
-    S3E_RESULT_SUCCESS,  //!< The operation completed successfully
-    S3E_RESULT_ERROR;    //!< An error occurred during the operation
-
-fun failed(res:s3eResult) => res == S3E_RESULT_ERROR;
-
-/**
- * Callback function type.
- * @param systemData callback-specific system supplied data.
- * @param userData data supplied by user at callback registration.
- * @par Required Header Files
- * s3eTypes.h
- */
-// typedef int32 (*s3eCallback) (void* systemData, void* userData);
-typedef s3eCallback = +void * +void -> int32;
+  header "#include <s3eTypes.h>";
+  
+  /**
+   * Generic S3E result type.
+   * @par Required Header Files
+   * s3eTypes.h
+   */
+  cenum s3eResult =
+      S3E_RESULT_SUCCESS,  //!< The operation completed successfully
+      S3E_RESULT_ERROR;    //!< An error occurred during the operation
+  
+  fun failed(res:s3eResult) => res == S3E_RESULT_ERROR;
+  
+  /**
+   * Callback function type.
+   * @param systemData callback-specific system supplied data.
+   * @param userData data supplied by user at callback registration.
+   * @par Required Header Files
+   * s3eTypes.h
+   */
+  // typedef int32 (*s3eCallback) (void* systemData, void* userData);
+  typedef s3eCallback = +void * +void -> int32;
 
 
 }

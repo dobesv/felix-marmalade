@@ -1,0 +1,503 @@
+include "IwGeomCore";
+include "IwMath";
+include "IwGeomVec";
+include "IwGeomMat";
+
+open class IwGeomFMat {
+
+  header "#include <IwGeomFMat.h>";
+
+  //-----------------------------------------------------------------------------
+  // CIwFMat
+  //-----------------------------------------------------------------------------
+  
+  /**
+   * CIwFMat - Combines a 3x3 rotation and 3-vector translation.
+   *
+   * @note The transformation represented by @a m is normally a rotation, for this
+   * reason @a m will be referred to as a rotation within the following documentation.
+   *
+   * <table border="0">
+   * <tr><td> 0</td>  <td> 1</td> <td> 2</td> <td>3</td>      <td></td>       <td>[0][0]</td> <td>[0][1]</td> <td>[0][2]</td></tr>
+   * <tr><td> 4</td>  <td> 5</td> <td> 6</td> <td>7</td>      <td>==></td>        <td>[1][0]</td> <td>[1][1]</td> <td>[1][2]</td></tr>
+   * <tr><td> 8</td>  <td> 9</td> <td> 10</td> <td>11</td>    <td></td>           <td>[2][0]</td> <td>[2][1]</td> <td>[2][2]</td></tr>
+   * <tr><td> 12</td> <td> 13</td> <td> 14</td> <td>15</td>   <td></td>           <td>t.x</td>    <td>t.y</td>    <td>t.z</td></tr>
+   * </table>
+   * @see IwGeomCore
+   * @autoexp{rowX=&lt;m[0][0]&gt;\,&lt;m[0][1]&gt;\,&lt;m[0][2]&gt; rowY=&lt;m[1][0]&gt;\,&lt;m[1][1]&gt;\,&lt;m[1][2]&gt; rowZ=&lt;m[2][0]&gt;\,&lt;m[2][1]&gt;\,&lt;m[2][2]&gt; t=&lt;t.x&gt;\,&lt;t.y&gt;\,&lt;t.z&gt;}
+   */
+  
+  
+  cstruct CIwFMat {
+  /**
+   * 3x3 rotation matrix.
+   */
+      m:++float;
+  /**
+   * Trans vector.
+   */
+      t:CIwFVec3;
+  };
+  
+  /**
+   * Identity matrix.
+   */
+  const Identity : CIwFMat;
+  
+  /**
+   * Creates a new matrix of scales by parameter @a f along each axis.
+   * @param f Rotation set as identity scaled by @a f.
+   */
+  ctor CIwFMat : float;
+  
+  /**
+   * Creates a new matrix from the supplied matrix.
+   * @param M Reference to matrix to copy.
+   * @see CIwMat
+   */
+  //    explicit CIwFMat(const CIwMat & M);
+  ctor CIwFMat : CIwMat;
+  
+  /**
+   * Creates a CIwMat matrix from this one.
+   * @see CIwMat
+   */
+  //    INLINE_MEMBER CIwMat ConvertToCIwMat();
+  fun ConvertToCIwMat : CIwFMat -> CIwMat = "$1.ConvertToCIwMat();";
+  
+  /**
+   * Creates a new matrix with given rotation and (vector) translation
+   * @param R Reference to matrix from which to copy rotation.
+   * @param T Reference to vector from which to copy translation.
+   * @see CIwFVec3
+   */
+  ctor CIwFMat : CIwFMat * CIwFVec3;  
+  
+  proc Serialise : CIwFMat = "$1.Serialise();";
+  
+  /**
+   * Ensures the rotation part of matrix is orthogonal.
+   * (TODO: This function could be faster using Gram-Schmidt orthogonalisation)
+   */
+  proc Normalise : CIwFMat = "$1.Normalise();";
+  
+  /**
+   * Transposes rotation part of matrix.
+   */
+  proc Transpose : CIwFMat = "$1.Transpose();";
+  
+  /**
+   * Gets the translation vector part of a matrix.
+   * @return Reference to the translation vector part of supplied matrix.
+   */
+  fun GetTrans : CIwFMat -> CIwFVec3 = "$1.GetTrans()";  
+  
+  /**
+   * Sets the translation vector part of a matrix.
+   * @param v Reference to vector to be set as translation part of a matrix.
+   * @return Reference to matrix.
+   */
+  proc SetTrans : CIwFMat * CIwFVec3 = "$1.SetTrans($2);";
+  // CIwFMat & SetTrans(CIwFVec3 const & v)
+  
+  /**
+   * Gets a copy of this matrix translated by given vector.
+   * @param V Vector by which to translate matrix copy.
+   * @return Translated matrix.
+   */
+  
+//  CIwFMat operator + (CIwFVec3 const & V) const
+  fun + : CIwFMat * CIwFVec3 -> CIwFMat = "$1 + $2";
+  
+  /**
+   * Vector representing the world (codomain) space X-axis in local (domain) space.
+   * @return The same vector as calling TransposeRotateVec(CIwFVec3::g_AxisX).
+   */
+  // CIwFVec3 ColumnX() const
+  fun ColumnX : CIwFMat -> CIwFVec3 = "$1.ColumnX()";
+
+  /**
+   * Vector representing the world (codomain) space Y-axis in local (domain) space.
+   * @return The same vector as calling TransposeRotateVec(CIwFVec3::g_AxisY).
+   */
+  // CIwFVec3 ColumnY() const
+  fun ColumnY : CIwFMat -> CIwFVec3 = "$1.ColumnY()";
+
+  /**
+   * Vector representing the world (codomain) space Y-axis in local (domain) space.
+   * @return The same vector as calling TransposeRotateVec(CIwFVec3::g_AxisZ).
+   */
+  // CIwFVec3 ColumnZ() const
+  fun ColumnZ : CIwFMat -> CIwFVec3 = "$1.ColumnZ()";
+  
+  /**
+   * Vector representing the local (domain) space X-axis in world (codomain) space.
+   * @return The same vector as calling RotateVec(CIwFVec3::g_AxisX).
+   * @note Function has alias VecX.
+   */
+  // CIwFVec3 RowX() const
+  fun RowX : CIwFMat -> CIwFVec3 = "$1.RowX()";
+  
+  /**
+   * Vector representing the local (domain) space Y-axis in world (codomain) space.
+   * @return The same vector as calling RotateVec(CIwFVec3::g_AxisY).
+   * @note Function has alias VecY.
+   */
+  // CIwFVec3 RowY() const
+  fun RowY : CIwFMat -> CIwFVec3 = "$1.RowY()";
+  
+  /**
+   * Vector representing the local (domain) space Z-axis in world (codomain) space.
+   * @return The same vector as calling RotateVec(CIwFVec3::g_AxisZ).
+   * @note Function has alias VecZ.
+   */
+  // CIwFVec3 RowZ() const
+  fun RowZ : CIwFMat -> CIwFVec3 = "$1.RowZ()";
+  
+  /**
+   * Transforms vector by rotation part of matrix.
+   * @param V Vector to transform.
+   * @return Vector rotated by rotation part of matrix.
+   * @note Debug version provides overflow checking.
+   */
+  // CIwFVec3 RotateVec(CIwFVec3 const &V) const
+  fun RotateVec : CIwFMat * CIwFVec3 -> CIwFVec3 = "$1.RotateVec($2)";
+  
+  /**
+   * Transforms vector by rotation part of matrix. Calculation is made using int64 numbers.
+   * @param V Vector to transform.
+   * @return Vector rotated by rotation part of matrix.
+   * @note Debug version provides overflow checking.
+   */
+  //CIwFVec3 RotateVecSafe(CIwFVec3 const &V) const
+  fun RotateVecSafe : CIwFMat * CIwFVec3 -> CIwFVec3 = "$1.RotateVecSafe($2)";
+  
+  /**
+   * Transforms vector by rotation and then translation parts of matrix.
+   * @param V Vector to transform
+   * @return Vector transformed by matrix.
+   * @note Debug version provides overflow checking.
+   */
+  //CIwFVec3 TransformVec(CIwFVec3 const &V) const
+  fun TransformVec : CIwFMat * CIwFVec3 -> CIwFVec3 = "$1.TransformVec($2)";
+
+  /**
+   * Transforms vector by rotation and then translation parts of matrix. Calculation is made using int64 numbers.
+   * @param V Vector to transform.
+   * @return Transformed vector.
+   * @note Debug version provides overflow checking.
+   */
+  // CIwFVec3 TransformVecSafe(CIwFVec3 const &V) const
+  fun TransformVecSafe : CIwFMat * CIwFVec3 -> CIwFVec3 = "$1.TransformVecSafe($2)";
+
+  /**
+   * If matrix is orthogonal, transforms vector by inverse of rotation part of matrix.
+   * @param V Vector to transform.
+   * @return Transformed vector.
+   * @note Debug version provides overflow checking.
+   */
+  // CIwFVec3 TransposeRotateVec(CIwFVec3 const &V) const
+  fun TransposeRotateVec : CIwFMat * CIwFVec3 -> CIwFVec3 = "$1.TransposeRotateVec($2)";
+ 
+  /**
+   * If matrix is orthogonal, transforms vector by inverse of rotation part of matrix. Calculation is made using int64 numbers.
+   * @param V vector to transform
+   * @return Transformed matrix.
+   * @note Debug version provides overflow checking
+   */
+  // CIwFVec3 TransposeRotateVecSafe(CIwFVec3 const &V) const
+  fun TransposeRotateVec : CIwFMat * CIwFVec3 -> CIwFVec3 = "$1.TransposeRotateVecSafe($2)";
+  
+  /**
+   * If matrix is orthogonal, performs the same operation as transforming vector by inverse
+   * of the matrix.
+   * @param V Vector to transform.
+   * @return Vector, less translation vector, and then transformed by transpose of rotation part of matrix.
+  * @note Debug version provides overflow checking.
+   */
+  // CIwFVec3 TransposeTransformVec(CIwFVec3 const &V) const
+  fun TransposeTransformVec : CIwFMat * CIwFVec3 -> CIwFVec3 = "$1.TransposeRotateVec($2)";
+  
+  //float TransformVecX(CIwFVec3 const &V) const { RETURN_ADD (IW_FIXED_MUL3(m[0][0],m[1][0],m[2][0],V.x,V.y,V.z), t.x); }
+  //float TransformVecY(CIwFVec3 const &V) const { RETURN_ADD (IW_FIXED_MUL3(m[0][1],m[1][1],m[2][1],V.x,V.y,V.z), t.y); }
+  //float TransformVecZ(CIwFVec3 const &V) const { RETURN_ADD (IW_FIXED_MUL3(m[0][2],m[1][2],m[2][2],V.x,V.y,V.z), t.z); }
+  fun TransformVecX : CIwFMat * CIwFVec3 -> float = "$1.TransformVecX($2)";
+  fun TransformVecY : CIwFMat * CIwFVec3 -> float = "$1.TransformVecY($2)";
+  fun TransformVecZ : CIwFMat * CIwFVec3 -> float = "$1.TransformVecZ($2)";
+  
+  //float TransformVecX(float x, float y, float z) const { RETURN_ADD (IW_FIXED_MUL3(m[0][0],m[1][0],m[2][0],x,y,z), t.x); }
+  //float TransformVecY(float x, float y, float z) const { RETURN_ADD (IW_FIXED_MUL3(m[0][1],m[1][1],m[2][1],x,y,z), t.y); }
+  //float TransformVecZ(float x, float y, float z) const { RETURN_ADD (IW_FIXED_MUL3(m[0][2],m[1][2],m[2][2],x,y,z), t.z); }
+  fun TransformVecX : CIwFMat * float^3 -> float = "$1.TransformVecX($b)";
+  fun TransformVecY : CIwFMat * float^3 -> float = "$1.TransformVecY($b)";
+  fun TransformVecZ : CIwFMat * float^3 -> float = "$1.TransformVecZ($b)";
+  
+  /**
+   * If matrix is orthogonal, finds X component of vector transformed by inverse of rotation part of matrix.
+   * @param V vector to transform
+   * @return X-component of vector transformed by transpose of rotation part of matrix
+   */
+  // INLINE_MEMBER   float RotateVecX(const CIwFVec3& V) const
+  fun RotateVecX : CIwFMat * CIwFVec3 -> float = "$1.RotateVecX($2)";
+
+  /**
+   * If matrix is orthogonal, finds Y component of vector transformed by inverse of rotation part of matrix.
+   * @param V Vector to transform.
+   * @return Y-component of vector transformed by transpose of rotation part of matrix.
+   */
+  // INLINE_MEMBER   float RotateVecY(const CIwFVec3& V) const
+  fun RotateVecY : CIwFMat * CIwFVec3 -> float = "$1.RotateVecY($2)";
+
+  /**
+   * If matrix is orthogonal, finds Z component of vector transformed by inverse of rotation part of matrix.
+   * @param V Vector to transform.
+   * @return Z-component of vector transformed by transpose of rotation part of matrix.
+   */
+  // INLINE_MEMBER   float RotateVecZ(const CIwFVec3& V) const
+  fun RotateVecY : CIwFMat * CIwFVec3 -> float = "$1.RotateVecZ($2)";
+
+  /**
+   * @return Matrix with transpose of rotation part and zero translation.
+   */
+  // CIwFMat  GetTranspose() const
+  fun GetTranspose : CIwFMat -> CIwFMat = "$1.GetTranspose()";
+  
+  /**
+   * Sets matrix to be rotation around X-axis by given angle. The rotation is determined by the
+   * element [0][0] and those of the minor matrix [0][0] of the rotation part of the matrix.
+   * @param r Angle of rotation
+   * @param resetTrans Whether the translation part of the matrix should be reset.
+   * @param setZeros Whether the rotation should be zeroed (apart from the elements which determine the rotation).
+   */
+  proc SetRotX : CIwFMat * iwangle * bool * bool = "$1.SetRotX($b);";
+  proc SetRotX : CIwFMat * iwangle * bool = "$1.SetRotX($b);";
+  proc SetRotX : CIwFMat * iwangle * bool = "$1.SetRotX($b);";
+  proc SetRotX : CIwFMat * iwangle = "$1.SetRotX($b);";
+  proc SetRotX : CIwFMat = "$1.SetRotX($b);";
+
+  /**
+   * Sets matrix to be rotation around Y-axis by given angle. The rotation is determined by the
+   * element [1][1] and those of the minor matrix [1][1] of the rotation part of the matrix.
+   * @param r angle of rotation
+   * @param resetTrans Whether the translation part of the matrix should be reset.
+   * @param setZeros If the rotation should be zeroed (apart from the elements which determine the rotation).
+   */
+  // INLINE_MEMBER void  SetRotY(iwangle r = 0, bool resetTrans = true, bool setZeros = true)
+  proc SetRotY : CIwFMat * iwangle * bool * bool = "$1.SetRotY($b);";
+  proc SetRotY : CIwFMat * iwangle * bool = "$1.SetRotY($b);";
+  proc SetRotY : CIwFMat * iwangle * bool = "$1.SetRotY($b);";
+  proc SetRotY : CIwFMat * iwangle = "$1.SetRotY($b);";
+  proc SetRotY : CIwFMat = "$1.SetRotY($b);";
+  
+  /**
+   * Sets matrix to be rotation around Z-axis by given angle. The rotation is determined by the
+   * element [2][2] and those of the minor matrix [2][2] of the rotation part of the matrix.
+   * @param r Angle of rotation.
+   * @param resetTrans Whether the translation part of the matrix should be reset.
+   * @param setZeros Whether the rotation should be zeroed (apart from the elements which determine the rotation).
+   */
+  // INLINE_MEMBER void  SetRotZ(iwangle r = 0, bool resetTrans = true, bool setZeros = true)
+  proc SetRotZ : CIwFMat * iwangle * bool * bool = "$1.SetRotZ($b);";
+  proc SetRotZ : CIwFMat * iwangle * bool = "$1.SetRotZ($b);";
+  proc SetRotZ : CIwFMat * iwangle * bool = "$1.SetRotZ($b);";
+  proc SetRotZ : CIwFMat * iwangle = "$1.SetRotZ($b);";
+  proc SetRotZ : CIwFMat = "$1.SetRotZ($b);";
+  
+      // TODO: Could optimise these functions
+  // INLINE_MEMBER void PreRotateX(iwangle r)
+  proc PreRotateX : CIwFMat * iwangle = "$1.PreRotateX($2);";
+  // INLINE_MEMBER void PreRotateY(iwangle r)
+  proc PreRotateX : CIwFMat * iwangle = "$1.PreRotateX($2);";
+  // INLINE_MEMBER void PreRotateZ(iwangle r)
+  proc PreRotateZ : CIwFMat * iwangle = "$1.PreRotateZ($2);";
+  // INLINE_MEMBER void PostRotateX(iwangle r)
+  proc PostRotateX : CIwFMat * iwangle = "$1.PostRotateX($2);";
+  // INLINE_MEMBER void PostRotateY(iwangle r)
+  proc PostRotateY : CIwFMat * iwangle = "$1.PostRotateY($2);";
+  // INLINE_MEMBER void PostRotateZ(iwangle r)
+  proc PostRotateZ : CIwFMat * iwangle = "$1.PostRotateZ($2);";
+  
+  
+  /**
+   * Sets matrix to be rotation by given angle around given axis with zero translation.
+   * @param axis Rotation axis (must be a UNIT vector).
+   * @param angle Rotation angle.
+   */
+  // void SetAxisAngle(CIwFVec3 axis, iwangle angle);
+  proc SetAxisAngle : CIwFMat * CIwFVec3 * iwangle = "$1.SetAxisAngle($b);";
+  
+  /**
+   * Creates a matrix looking between the specified points with the given up vector.
+   * @note Does not affect translation vector.
+   * @note Bear in mind that positive y is DOWN the screen.
+   */
+  // void LookAt(const CIwFVec3& from, const CIwFVec3& to, const CIwFVec3& up)
+  proc LookAt : CIwFMat * CIwFVec3^3 = "$1.LookAt($b)";
+  
+  /**
+   * Composes two matrices together.
+   * @param M Matrix by which to post multiply.
+   * @return (this matrix) * M. Does not modify either input matrix.
+   */
+  // CIwFMat operator * (CIwFMat const & M) const
+  fun * : CIwFMat * CIwFMat -> CIwFMat = "$1 * $2";
+  
+  /**
+   * Composes two matrices together.
+   * @param M matrix by which to pre multiply.
+   * @return M * (this matrix). Overwrites this matrix.
+   */
+  // CIwFMat & PreMult(CIwFMat const & M)
+  proc PreMult : CIwFMat * CIwFMat = "$1.PreMult($2);";
+  
+  /**
+   * Composes two matrices together.
+   * @param M matrix by which to post multiply.
+   * @return (this matrix) * M. Overwrites this matrix.
+   */
+  // CIwFMat & PostMult(CIwFMat const & M)
+  proc PostMult : CIwFMat * CIwFMat = "$1.PostMult($2);";
+  
+  /**
+   * Transform the rotation part of the matrix by that of the supplied matrix.
+   * @param M matrix from which to apply rotation.
+   * @return Reference to matrix.
+   */
+  // CIwFMat&  PostRotate(CIwFMat const& M)
+  proc PostRotate : CIwFMat * CIwFMat = "$1.PostRotate($2);";
+
+  /**
+   * Transforms the rotation part of the matrix by that of the supplied matrix.
+   * @param M Matrix from which to apply rotation.
+   * @return Reference to matrix.
+   */
+  // CIwFMat PreRotate(CIwFMat const& M)
+  proc PostRotate : CIwFMat * CIwFMat = "$1.PostRotate($2);";
+  
+  /**
+   * Scales rotation part of matrix.
+   * @param v Scale to apply to rotation.
+   * @return Reference to matrix.
+   */
+  // CIwFMat& ScaleRot(float v)
+  proc ScaleRot : CIwFMat * float = "$1.ScaleRot($2);";
+  
+  /**
+   * Scales translation part of matrix.
+   * @param v Scale to apply to rotation.
+   * @return Reference to matrix.
+   */
+  //CIwFMat& ScaleTrans(float v)
+  proc ScaleTrans : CIwFMat * float = "$1.ScaleTrans($2);";
+  
+  /**
+   * Scales rotation and translation parts of matrix.
+   * @param v Scale to apply to matrix.
+   */
+  //CIwFMat& Scale(float v)
+  proc Scale : CIwFMat * float = "$1.Scale($2);";
+  
+  /**
+   * Linear interpolation of rotation elements.
+   * @param m0 Start rotation elements.
+   * @param m1 End rotation elements.
+   * @param fraction Relative amount of start and end elements to use.
+   * fraction is constrained to [0, IW_GEOM_ONE].\n
+   * fraction = 0 results in rotation being set to that of @a m0.\n
+   * fraction = IW_GEOM_ONE results in rotationbeing set to that of @a m1.
+   */
+  // void    InterpRot(CIwFMat const & m0, CIwFMat const & m1, float fraction);
+  proc InterpRot : CIwFMat * CIwFMat * CIwFMat * float = "$1.InterpRot($b);";
+  
+  /**
+   * Linear interpolation of translation elements.
+   * @param m0 Start translation elements.
+   * @param m1 End translation elements.
+   * @param fraction Relative amount of start and end position to use.
+   * fraction is constrained to [0, IW_GEOM_ONE]. \n
+   * fraction = 0 results in position set to that of @a m0.\n
+   * fraction = IW_GEOM_ONE results in position being set to that of @a m1.
+   */
+  // void    InterpTrans(CIwFMat const & m0, CIwFMat const & m1, float fraction);
+  proc InterpRot : CIwFMat * CIwFMat * CIwFMat * float = "$1.InterpRot($b);";
+  
+  /**
+   * Copies rotation from another matrix.
+   * @param m0 Source matrix.
+   */
+  // void    CopyRot(const CIwFMat& m0)
+  proc CopyRot : CIwFMat * CIwFMat = "$1.CopyRot($2);";
+
+  /**
+   * Copies translation from another matrix.
+   * @param m0 Source matrix.
+   */
+  // void    CopyTrans(const CIwFMat& m0)
+  proc CopyTrans : CIwFMat * CIwFMat = "$1.CopyTrans($2);";
+  
+  /**
+   * Determines if rotation part equal to another matrix.
+   * @param m0 Matrix for comparison with.
+   * @return true if the matrices have equal rotation elements, otherwise false.
+   */
+  // bool IsRotSame(CIwFMat const& m0) const
+  fun IsRotSame : CIwFMat * CIwFMat -> bool = "$1.IsRotSame($2)";
+  
+  /**
+   * Determines if translation part of one matrix is equal to that of another matrix.
+   * @param m0 Matrix for comparison.
+   * @return true if the matrices have equal translation elements, otherwise false.
+   */
+  // bool IsTransSame(CIwFMat const& m0) const
+  fun IsTransSame : CIwFMat * CIwFMat -> bool = "$1.IsTransSame($2)";
+  
+  /**
+   * Determines if matrix is equal to another matrix.
+   * @param m0 Matrix for comparison.
+   * @return true if the matrices are equal, otherwise false.
+   */
+  // bool operator == (CIwFMat const & m0) const
+  fun == : CIwFMat * CIwFMat -> bool = "$1 == $2";
+  
+  /**
+   * Determines if matrix is not equal to another matrix.
+   * @param m0 Matrix for comparison.
+   * @return true if the matrices are not equal, otherwise false.
+   */
+  // bool operator != (CIwFMat const & m0) const
+  fun != : CIwFMat * CIwFMat -> bool = "$1 != $2";
+  
+  /** Determines if rotation part equal is equal to the identity rotation. */
+  // bool IsRotIdentity() const
+  fun IsRotIdentity : CIwFMat -> bool = "$1.IsRotIdentity()";
+  
+  /** Determines if translation part equal is equal to the zero vector. */
+  // bool IsTransIdentity() const
+  fun IsTransIdentity : CIwFMat -> bool = "$1.IsTransIdentity()";
+  
+  /** Determines if matrix is equal to the identity matrix. */
+  // bool IsIdentity() const
+  fun IsIdentity : CIwFMat -> bool = "$1.IsIdentity()";
+  
+  /** Sets matrix to the identity matrix. */
+  // void SetIdentity()
+  proc SetIdentity : CIwFMat = "$1.SetIdentity();";
+  
+  /** Determines if rotation part is equal to zero. */
+  // bool IsRotZero() const
+  fun IsRotZero : CIwFMat -> bool = "$1.IsRotZero()";
+  
+  /** Determines if translation part is equal to zero. */
+  // bool IsTransZero() const
+  fun IsTransZero : CIwFMat -> bool = "$1.IsTransZero()";
+  
+  /** Determines if matrix is equal to zero. */
+  // bool IsZero() const
+  fun IsZero : CIwFMat -> bool = "$1.IsZero()";
+  
+  
+  /** Sets matrix to zero. */
+  // void SetZero();
+  proc SetZero : CIwFMat = "$1.SetZero();";
+
+}

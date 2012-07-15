@@ -124,17 +124,18 @@ proc Set : CIwColour = "$2.Set($2)";
      * @par Required Header Files
  * IwColour.h
  */
-    inline uint32 Get() const
+//    inline uint32 Get() const
 
 fun Get : CIwColour -> uint32 = "$1.Get()";
-
+ctor uint32(col:CIwColour) => Get(col);
+ 
     /**
      * Sets all 4 components from a single input, and make alpha value fully opaque.
      * @param rgba 24-bit value to set.
      * @see Set, SetGrey
      * @par Required Header Files
- * IwColour.h
- */
+     * IwColour.h
+     */
 //    inline void SetOpaque(uint32 rgb)
 proc SetOpaque : CIwColour * uint32 = "$1.SetOpaque($2);";
 
@@ -257,7 +258,7 @@ cenum IwGxColourFixed =
     IW_GX_COLOUR_MAGENTA,   //!< magenta
     IW_GX_COLOUR_CYAN,      //!< cyan
     IW_GX_COLOUR_YELLOW,    //!< yellow
-    IW_GX_COLOUR_MAX,
+    IW_GX_COLOUR_MAX
 ;
 
 // Default colour to use for debug drawing.

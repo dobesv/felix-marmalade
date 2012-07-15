@@ -1,0 +1,1853 @@
+include "IwGxState";
+// include "IwGxFuncTable";
+include "IwGxTypes";
+include "s3eTypes";
+include "s3eSurface";
+include "IwGxDebug";
+include "IwGeom";
+include "IwMaterial";
+include "IwGxStream";
+include "IwGxPrint";
+
+open class IwGx {
+  
+  header "#include <IwGx.h>";
+ 
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup DataCache Data Cache
+   * This module provides functionality to allow you to control the data cache.
+   *
+   * @note For more information on how to use the data cache, see the
+   * @ref datacache "Data Cache" section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  
+  //-----------------------------------------------------------------------------
+  
+  /**
+   * Resets the IwGx global data cache pointer.
+   * This should be done immediately before or after rendering the entire scene.
+   * This is called by IwGxReset (and thus IwGxFlush) so there is normally no need to call it explicitly.
+   * @see IwGxReset, IwGxDataCacheSetSize
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc    IwGxDataCacheReset : unit;
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup iwgxInitTerm Initialisation and Termination
+   * This module controls the initialisation and termination of the IwGx module.
+   *
+   * @note For more information on the initialisation and termination of the
+   * IwGx module, see the @ref iwgxinitialisationandpipeline "IwGx Initialisation and Pipeline"
+   * section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  /**
+   * Initialises IwGx and all subsystems.
+   * IwGxInit will initialise IwGx with 'normal' settings. When initialised with this call IwGx
+   * will support rendering with the standard SW renderer and with GL HW/SW pipelines (depending
+   * on icf settings). See Selective Linking for other initialisation options.
+   *
+   * @see iwgxlink
+   * @see IwGxTerminate
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxInit : unit;
+  
+  /**
+   * Shuts down IwGx and all subsystems.
+   * @see IwGxInit
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxTerminate : unit;
+  
+  /**
+   * Resets IwGx caches etc. Should be called prior to rendering any frame.
+   * This is called implicitly by IwGxFlush, which is normally sufficient for most applications.
+   * This function can be called to 'flush' IwGx without rendering anything.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxReset : unit;
+  
+  /**
+   * Tells IwGx we have performed an application update. This is required for UV
+   * animation and some other advanced features.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxTickUpdate : unit;
+  
+  /**
+   * If [Gx] UseGLContextShadow is set this function can be used to suspend GL.
+   * Apps should not make any IwGx or native gl calls between IwGxContextShadowSuspend
+   * and IwGxContextShadowResume.
+   * IwGxContextShadowResume should be called to restore GL.
+   * This function will have no effect if [Gx] UseGLContextShadow is not set
+   * @note When useGLContextShadow is set Gx will automatically call this function on suspend
+   * @return value is always 0 and can be ignored.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxContextShadowSuspend : unit -> int;
+  
+  /**
+   * If [Gx] UseGLContextShadow is set this function can be used to restore GL.
+   * Apps should not make any IwGx or native gl calls between IwGxContextShadowSuspend
+   * and IwGxContextShadowResume.
+   * IwGxContextShadowSuspend should be called prior to IwGxContextShadowResume to suspend GL.
+   * This function will have no effect if [Gx] UseGLContextShadow is not set
+   * @note When [Gx] UseGLContextShadow is set Gx will automatically call this function on resume,
+   * unless the app has explictly asked to suspend gl
+   * @return value is always 0 and can be ignored.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxContextShadowResume : unit -> int;
+  
+  
+  /**
+   * If [Gx] UseGLContextShadow is set this callback will be called during restoration of the context.
+   * By default a simple progress bar will display.
+   * From the first time the callback is called, any IwGx functionality can be used. However, not all textures will
+   * be restored. The application should check the UPLOADED_F flag of any texture is set prior to use.
+   * The callback will be called once per texture uploaded, but it is advisable to only update the screen
+   * periodically from the callback for maximum speed.
+   * @param fn IwGxProgressCallbackFn to call
+   * @see CIwTexture::GetFlags
+   * @par Required Header Files
+   * IwGx.h
+   */
+  
+  //  void IwGxSetContextRestoreCallback(IwGxProgressCallbackFn fn)
+  
+  /**
+   * Register for an IwGx callback. Callbacks are raised for various events.
+   * @param cbid The event to recieve a callback for.
+   * @param fn The function to callback.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxRegister(IwGxCallback cbid, IwGxCallbackFn fn);
+  
+  /**
+   * Remove an IwGx callback.
+   * @param cbid The event to remove a callback for.
+   * @param fn The function to remove.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxUnRegister(IwGxCallback cbid, IwGxCallbackFn fn);
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup iwgxScreen Screen Manipulation
+   * Functions for manipulating screen size, screen orientation, screen clear colour, etc.
+   *
+   * @note For more information on the screen manipulation, see the
+   * @ref screenmanipulation "Screen Manipulation"
+   * section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  /**
+   * Gets the current device screen width.
+   * @return The current device screen width, in pixels.
+   * @see IwGxGetDeviceHeight, IwGxGetScreenWidth, IwGxGetScreenHeight, IwGxSetScreenOrient, IwGxGetScreenOrient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetDeviceWidth : unit -> uint32;
+  
+  /**
+   * Gets the current device screen height.
+   * @return The current device screen height, in pixels.
+   * @see IwGxGetDeviceWidth, IwGxGetScreenWidth, IwGxGetScreenHeight, IwGxSetScreenOrient, IwGxGetScreenOrient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetDeviceHeight : unit -> uint32;
+  
+  /**
+   * Gets the current application screen width.
+   * @note This may differ from the device screen width,
+   * depending on the screen orientation.
+   * @return The current application screen width, in pixels.
+   * @see IwGxGetDeviceWidth, IwGxGetDeviceHeight, IwGxGetScreenHeight, IwGxSetScreenOrient, IwGxGetScreenOrient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetScreenWidth : unit -> uint32;
+  
+  /**
+   * Gets the current application screen height.
+   * @note that this may differ from the device screen height,
+   * depending on the screen orientation.
+   * @return The current application screen height, in pixels.
+   * @see IwGxGetDeviceWidth, IwGxGetDeviceHeight, IwGxGetScreenWidth, IwGxSetScreenOrient, IwGxGetScreenOrient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetScreenHeight : unit -> uint32;
+  
+  /**
+   * Gets the current draw display width.
+   * @note that this may differ from the screen width,
+   * when a viewport is set.
+   * @return The current display width, in pixels.
+   * @see IwGxGetDisplayHeight, IwGxGetDeviceWidth, IwGxGetDeviceHeight, IwGxGetScreenWidth, IwGxGetScreenHeight, IwGxSetScreenOrient, IwGxGetScreenOrient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetDisplayWidth : unit -> uint32;
+  
+  /**
+   * Gets the current draw display height.
+   * @note that this may differ from the screen height,
+   * when a viewport is set.
+   * @return The current display height, in pixels.
+   * @see IwGxGetDisplayWidth, IwGxGetDeviceWidth, IwGxGetDeviceHeight, IwGxGetScreenWidth, IwGxGetScreenHeight, IwGxSetScreenOrient, IwGxGetScreenOrient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetDisplayHeight : unit -> uint32;
+  
+  /**
+   * Sets the application screen orientation, in 90 degree increments.
+   * @param i IwGxScreenOrient enumeration.
+   * @see IwGxGetScreenOrient, IwGxGetDeviceWidth, IwGxGetDeviceHeight, IwGxGetScreenWidth, IwGxGetScreenHeight
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetScreenOrient : IwGxScreenOrient;
+  
+  /**
+   * Sets the internal application screen orientation, in 90 degree increments. Do not use directly.
+   * @param i IwGxScreenOrient enumeration.
+   * @see IwGxGetScreenOrient, IwGxGetDeviceWidth, IwGxGetDeviceHeight, IwGxGetScreenWidth, IwGxGetScreenHeight
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc _IwGxSetScreenOrient : IwGxScreenOrient;
+  
+  /**
+   * Gets the application screen orientation, in 90 degree increments.
+   * @return IwGxScreenOrient enumeration.
+   * @see IwGxSetScreenOrient, IwGxGetDeviceWidth, IwGxGetDeviceHeight, IwGxGetScreenWidth, IwGxGetScreenHeight
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetScreenOrient : unit -> IwGxScreenOrient;
+  
+  /**
+   * Clears the screen.
+   * @param clearFlags Flags specifying which buffers to clear. Currently, should always be IW_GX_COLOUR_BUFFER_F | IW_GX_DEPTH_BUFFER_F.
+   * @see IwGxSetColClear
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxClear(uint32 clearFlags = IW_GX_DEPTH_BUFFER_F | IW_GX_COLOUR_BUFFER_F)
+  proc IwGxClear : uint32;
+  proc IwGxClear : unit;
+  
+  /**
+   * Sets the screen clear colour.
+   * @param r 8-bit red component.
+   * @param g 8-bit green component.
+   * @param b 8-bit blue component.
+   * @param a 8-bit alpha component.
+   * @see IwGxGetColClear, IwGxClear
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void    IwGxSetColClear(uint8 r, uint8 g, uint8 b, uint8 a);
+  proc IwGxSetColClear : uint8^4;
+  proc IwGxSetColClear : int^4;
+  
+  /**
+   * Gets the current screen clear colour.
+   * @result The current screen clear colour.
+   * @see IwSetColClear, IwGxClear
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetColClear : unit -> CIwColour;
+  
+  /**
+   * Sets the current emissive colour.
+   * @param col Colour, as 32-bit ABGR value.
+   * @see IwGxSetColAmbient, IwGxSetColDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxSetColEmissive(uint32 col) {IwGetGxState()->m_ColEmissive.Set(col);}
+  proc IwGxSetColEmissive : uint32;
+  
+  /**
+   * Sets the current emissive colour.
+   * @param _r 8-bit red component.
+   * @param _g 8-bit green component.
+   * @param _b 8-bit blue component.
+   * @param _a 8-bit alpha component.
+   * @see IwGxSetColAmbient, IwGxSetColDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxSetColEmissive(uint8 _r, uint8 _g, uint8 _b, uint8 _a) {IwGetGxState()->m_ColEmissive.r = _r; IwGetGxState()->m_ColEmissive.g = _g; IwGetGxState()->m_ColEmissive.b = _b; IwGetGxState()->m_ColEmissive.a = _a;}
+  proc IwGxSetColEmissive : uint8^4;
+  
+  /**
+   * Sets the current emissive colour.
+   * @param col Colour structure.
+   * @see IwGxSetColAmbient, IwGxSetColDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxSetColEmissive(CIwColour col) {IwGetGxState()->m_ColEmissive.Set(col);}
+  proc IwGxSetColEmissive : CIwColour;
+  
+  /**
+   * Gets the current emissive colour.
+   * @result The current emissive colour.
+   * @see IwSetColEmissive
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetColEmissive : unit -> CIwColour;
+  
+  /**
+   * Sets the current ambient colour.
+   * @param col Colour, as 32-bit ABGR value.
+   * @see IwGxSetColEmissive, IwGxSetColDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  //void IwGxSetColAmbient(uint32 col) {IwGetGxState()->m_ColAmbient.Set(col);}
+  proc IwGxSetColAmbient : uint32;
+  
+  /**
+   * Sets the current ambient colour.
+   * @param _r 8-bit red component.
+   * @param _g 8-bit green component.
+   * @param _b 8-bit blue component.
+   * @param _a 8-bit alpha component.
+   * @see IwGxSetColEmissive, IwGxSetColDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxSetColAmbient(uint8 _r, uint8 _g, uint8 _b, uint8 _a) {IwGetGxState()->m_ColAmbient.r = _r; IwGetGxState()->m_ColAmbient.g = _g; IwGetGxState()->m_ColAmbient.b = _b; IwGetGxState()->m_ColAmbient.a = _a;}
+  proc IwGxSetColAmbient : uint8^4;
+  
+  /**
+   * Sets the current ambient colour.
+   * @param col Colour structure.
+   * @see IwGxSetColEmissive, IwGxSetColDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void IwGxSetColAmbient(CIwColour col) {COPY32(IwGetGxState()->m_ColAmbient, col);}
+  proc IwGxSetColAmbient : CIwColour;
+  
+  /**
+   * Gets the current ambient colour.
+   * @result The current ambient colour.
+   * @see IwSetColAmbient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetColAmbient : unit -> CIwColour;
+  
+  /**
+   * Sets the current diffuse colour.
+   * @param col Colour, as 32-bit ABGR value.
+   * @see IwGxSetColAmbient, IwGxSetColEmissive
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetColDiffuse : uint32;
+  
+  /**
+   * Sets the current diffuse colour.
+   * @param _r 8-bit red component.
+   * @param _g 8-bit green component.
+   * @param _b 8-bit blue component.
+   * @param _a 8-bit alpha component.
+   * @see IwGxSetColAmbient, IwGxSetColEmissive
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetColDiffuse : uint8 * uint8 * uint8 * uint8;
+  
+  /**
+   * Sets the current diffuse colour.
+   * @param col Colour structure.
+   * @see IwGxSetColAmbient, IwGxSetColEmissive
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetColDiffuse : CIwColour;
+  
+  /**
+   * Gets the current diffuse colour.
+   * @result The current diffuse colour.
+   * @see IwSetColDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetColDiffuse : unit -> CIwColour;
+  
+  /**
+   * Gets general flags.
+   * @see IwGxFlags
+   * @return General flags.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFlags : unit -> uint32;
+  gen IwGxGetInternalFlags : unit -> uint32;
+  proc IwGxSetDebugFlags : uint32;
+  
+  /**
+   * Sets debug flags.
+   * @param flags Flags to set.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetDebugFlags : uint32;
+  proc IwGxClearDebugFlags : uint32;
+  
+  /**
+   * Clears debug flags.
+   * @param flags Flags to clear.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxClearDebugFlags : uint32;;
+  
+  gen IwGxGetDebugFlags : unit -> uint32;
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup iwgxpipeline Pipeline Switching
+   * IwGx provides custom software implementations for geometry transform, lighting and rasterisation.
+   *
+   * @note These functions should be called before doing any drawing, otherwise behaviour is undefined.
+   *
+   * @note For more information on the pipeline switching,
+   * see the @ref iwgxinitialisationandpipeline "IwGx Initialisation and Pipeline"
+   * section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  //! Sets the transform pipeline to HW.
+  proc IwGxSetTransformHW : unit;
+  
+  //! Sets the transform pipeline to SW.
+  proc IwGxSetTransformSW : unit;
+  
+  //! Sets the lighting pipeline to HW.
+  proc IwGxSetLightingHW : unit;
+  
+  //! Sets the lighting pipeline to SW.
+  proc IwGxSetLightingSW : unit;
+  
+  //! Sets the rasterisation pipeline to HW.
+  proc IwGxSetRasterisationHW : unit;
+  
+  //! Sets the rasterisation pipeline to SW.
+  proc IwGxSetRasterisationSW : unit;
+  
+  /**
+   * Set the SW transform pipeline to high or low precision. High precision involves 64-bit multiples, and is slower.
+   * Default is low precision (32-bit multiplies). Note that after changing the precision value, the user must call
+   * IwGxSetModelMatrix() before attempting to perform any more drawing.
+   * @param b true to set high-precision.
+   * @note This function does NOT set the transform pipeline to SW - it merely determines the precision of the SW transform pipeline.
+   * @see IwGxGetTransformSWHiFi()
+   */
+  proc IwGxSetTransformSWHiFi : bool;
+  /*{
+      if (b)
+          IwGetGxState()->m_InternalFlags |= IW_GX_INTERNAL_TRANSFORM_SW_HIFI_F;
+      else
+          IwGetGxState()->m_InternalFlags &= ~IW_GX_INTERNAL_TRANSFORM_SW_HIFI_F;
+  }*/
+  
+  /**
+   * Check if the SW transform pipeline is high-precision.
+   * @return true if the SW transform pipeline is set to high-precision.
+   * @see IwGxSetTransformSWHiFi()
+   */
+  gen IwGxGetTransformSWHiFi : unit -> bool;
+  
+  /**
+   * Get the underlying HW platform.
+   * @return IwGxHWType, for example IW_GX_HWTYPE_GL1
+   */
+  gen IwGxGetHWType : unit -> IwGxHWType;
+  
+  /**
+   * @defgroup iwgxlink Selective Linking
+   * IwGx provides smaller builds when not using some features of IwGx.
+   * IwGxInit_Base should be called once and once only prior to all other init functions, if called more than once
+   * selective link calls following the second call will have no effect.
+   * IwGxInit_Base should be followed by at least one SW render or GL render init call.
+   * Usually only one SW renderer should be linked in this way.
+   * Any SW init call should precede the GL init call (The GL init will exit the application if GL is not available and
+   * SW has not been inited).
+   *
+   *  IwGxInit_Base
+   *  These functions should be called only once (and after a call to IwGxInit_Base()) before doing any drawing, otherwise behaviour is undefined.
+   * @{
+   */
+  
+  /**
+   * Initialise IwGx's core functionality. This allows smaller builds if you are not using some features of IwGx.
+   * @see IwGxInit
+   * @see IwGxTerminate
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxInit_Base : unit;
+  
+  //! Initialises the Standard SW renderer with all options.
+  proc IwGxInit_SWRenderStandard : unit;
+  
+  //! Initialises the Standard SW renderer with R only intensity lighting and EnvMaping.
+  proc IwGxInit_SWRenderStandardNoRgb : unit;
+  
+  //! Initialises the Standard SW renderer with Rgb lighting.
+  proc IwGxInit_SWRenderStandardNoEnvMap : unit;
+  
+  //! Initialises the Standard SW renderer with R only intensity lighting.
+  proc IwGxInit_SWRenderStandardNoRgbNoEnvMap : unit;
+  
+  //! Initialises the Standard ZBuffered SW renderer with all options.
+  proc IwGxInit_SWRenderStandardZBuffered : unit;
+  
+  //! Initialises the Standard ZBuffered SW renderer with R only intensity lighting and EnvMaping.
+  proc IwGxInit_SWRenderStandardZBufferedNoRgb : unit;
+  
+  //! Initialises the Standard ZBuffered SW renderer with Rgb lighting.
+  proc IwGxInit_SWRenderStandardZBufferedNoEnvMap : unit;
+  
+  //! Initialises the Standard ZBuffered SW renderer with R only intensity lighting.
+  proc IwGxInit_SWRenderStandardZBufferedNoRgbNoEnvMap : unit;
+  
+  //! Initialises the Scanline SW renderer with all options.
+  proc IwGxInit_SWRenderScanLine : unit;
+  
+  //! Initialises the Scanline SW renderer with R only intensity lighting and EnvMaping.
+  proc IwGxInit_SWRenderScanLineNoRgb : unit;
+  
+  //! Initialises the Scanline SW renderer with Rgb lighting.
+  proc IwGxInit_SWRenderScanLineNoEnvMap : unit;
+  
+  //! Initialises the Scanline SW renderer with R only intensity lighting.
+  proc IwGxInit_SWRenderScanLineNoRgbNoEnvMap : unit;
+  
+  //! Initialises the Scanline SW renderer to enable bilinear texture filtering
+  //! This must only be called after all other IwGxInit_SW pipeline calls.
+  proc IwGxInit_SWRenderEnableBilinearFiltering : unit;
+  
+  //! Initialises the GL renderer with dynamic load balancing (on some platforms transforms will be done by GX).
+  proc IwGxInit_GLRender : unit;
+  
+  //! Initialises the DS renderer
+  proc IwGxInit_DSRender : unit;
+  
+  //! Initialises the PSP renderer
+  proc IwGxInit_PSPRender : unit;
+  
+  //! Initialises the GL renderer without load balancing (all transforms done by GL). This option produces a smaller code size.
+  proc IwGxInit_GLRenderNoSWPipeline : unit;
+  
+  //! Initialises the GLES2 renderer with dynamic load balancing (on some platforms transforms will be done by GX).
+  proc IwGxInit_GL2Render : unit;
+  
+  //! Initialises the GLES2 renderer without load balancing (all transforms done by GLES2 shaders). This option produces a smaller code size.
+  proc IwGxInit_GL2RenderNoSWPipeline : unit;
+  
+  //Legacy definition
+  gen IwGxActivateEnvMapSW : unit -> void;
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup ZDepth Z-Depth Control
+   * This module allows you to specify a z-depth offset, or fixed z-depth value, to be used for all primitives at the
+   * next call to IwGxDrawPrims().
+   *
+   * @note For more information on Z-Depth Control,
+   * see the @ref zdepth "Z-Depth"
+   * section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  
+  /**
+   * Sets the geometry z-depth offset. A value of 0 indicates no offset.
+   * @param ofs Offset to add to geometry's z-depth position, in viewspace.
+   * @see IwGxGetZDepthOfs, IwGxSetZDepthFixed, IwGxGetzDepthFixed
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetZDepthOfs : int32;
+  
+  /**
+   * Gets the geometry z-depth offset. A value of 0 indicates no offset.
+   * @return Offset to add to geometry's z-depth position.
+   * @see IwGxSetZDepthOfs, IwGxSetZDepthFixed, IwGxGetZDepthFixed
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetZDepthOfs : unit -> int32;
+  
+  /**
+   * Sets the geometry z-depth offset base. A value of 0 indicates no offset.
+   * @param ofs Offset to add to all z-depth offsets, in viewspace.
+   * @see IwGxSetZDepthOfs, IwGxGetZDepthOfs, IwGxGetZDepthOfsBase, IwGxSetZDepthFixed, IwGxGetzDepthFixed
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetZDepthOfsBase : int32;
+  
+  /**
+   * Gets the geometry z-depth offset base. A value of 0 indicates no offset.
+   * @return Offset to add to all z-depth offsets, in viewspace.
+   * @see IwGxSetZDepthOfs, IwGxGetZDepthOfs, IwGxSetZDepthOfsBase, IwGxSetZDepthFixed, IwGxGetzDepthFixed
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetZDepthOfsBase : unit -> int32;
+  
+  /**
+   * Sets the geometry fixed z-depth value. A value of -1 indicates not to use a fixed z-depth.
+   * @param ofs Fixed value to use as geometry's z-depth position.
+   * @see IwGxGetZDepthOfs, IwGxSetZDepthOfs, IwGxGetZDepthFixed
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetZDepthFixed : int32;
+  
+  /**
+   * Gets the geometry z-depth value. A value of -1 indicates not to use a fixed z-depth.
+   * @return Fixed value to use as geometry's z-depth position.
+   * @see IwGxGetZDepthFixed, IwGxSetZDepthOfs, IwGxGetZDepthOfs
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetZDepthFixed : unit -> int32;
+  
+  // Legacy
+  proc IwGxSetOTZOfs : int32;
+  // int32 IwGxGetOTZOfs();
+  proc IwGxSetOTZFixed : int32;
+  // int32 IwGxGetOTZFixed();
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup iwgxfog Fog Control
+   * Certain custom hardware may allow polygons to be affected by fog.
+   * Currently these functions have no effect when using software rasterisation.
+   *
+   * @note For more information on the IwGx API,
+   * see the @ref iwgxapidocumentation "IwGx API Documentation".
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+   /**
+   * Turns fog on.
+   * This can be set per piece of geometry.
+   * @note Fogging does not affect screenspace geometry
+   * @see IwGxFogOff
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxFogOn : unit;
+  
+  /**
+   * Turns fog off.
+   * This can be set per piece of geometry.
+   * @note Fogging does not affect screenspace geometry
+   * @see IwGxFogOn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxFogOff : unit;
+  
+  /**
+   * Sets the viewspace z at which fog starts and ends.
+   * This setting affects the scene as a whole and cannot be set on a per
+   * geometry basis
+   * @param fz Viewspace z value at which fog ends.
+   * @param nz Viewspace z value at which fog starts.
+   * @see IwGxGetFogNearZ, IwGxGetFogFarZ
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetFogFarZNearZ : int32 * int32;
+  
+  /**
+   * Sets the fog colour.
+   * This setting affects the scene as a whole and cannot be set on a per
+   * geometry basis
+   * @param col Fog colour value.
+   * @see IwGxSetFogStartZ, IwGxSetFogEndZ, IwGxFogOn, IwGxFogOff
+   */
+  //! Set fog colour.
+  proc IwGxSetFogCol : CIwColour;
+  
+  /**
+   * Gets the viewspace z at which fog starts.
+   * @return The current viewspace z value at which fog starts.
+   * @see IwGxSetFogFarZNearZ
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFogNearZ : unit -> int32;
+  
+  /**
+   * Gets the viewspace z at which fog ends.
+   * @return The current viewspace z value at which fog ends.
+   * @see IwGxSetFogFarZNearZ
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFogFarZ : unit -> int32;
+  
+  /**
+   * Gets the fog colour.
+   * @return The current fog colour.
+   * @see IwGxSetFogColour
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFogColour : unit -> CIwColour;
+  
+  
+  /** @} */
+  /** @} */
+  
+  
+  
+  //-----------------------------------------------------------------------------
+  /*
+   * PTCache Post-transform Cache
+   * <b>DO WE WANT TO DOC THIS?<b>
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  /*
+   * Resets the post-transform vertex cache size.
+   * Should be done once, immediately before or after rendering the entire scene.
+   * This function is called by IwGxReset (and thus IwGxFlush) so there is normally no need to call it explicitly.
+   * @see IwGxPTVertAlloc
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxPTVertCacheReset : unit;
+  
+  /*
+   * Allocates some post-transform vertices from the cache.
+   * @param n Number of vertices to allocate.
+   * @return Pointer to the allocated vertices.
+   * @see IwGxPTVertCacheReset
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // gen IwGxPTVertAlloc : uint32 -> +CIwPTVert;
+  
+  /**
+   * Get the number of free verts remaining in the vert cache.
+   * @return Number of free verts remaining in the vert cache.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxVertCacheGetFree : unit -> int32;
+  
+  /**
+   * Sets the geometry vertex stream, in worldspace.
+   * @param pVec Pointer to the vertex stream.
+   * @param numVerts Number of vertices in the stream.
+   * @see IwGxSetVertStreamModelSpace, IwGxSetVertStreamViewSpace, IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetVertStreamWorldSpace : +CIwSVec3 * uint32;
+  
+  /**
+   * Sets the geometry vertex stream, in modelspace.
+   * @param pVec Pointer to the vertex stream.
+   * @param numVerts Number of vertices in the stream.
+   * @see IwGxSetVertStreamWorldSpace, IwGxSetVertStreamViewSpace, IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetVertStreamModelSpace : +CIwSVec3 * uint32;
+  
+  /**
+   * Equivalent to IwGxSetVertStreamModelSpace.
+   * Sets the geometry vertex stream, in modelspace.
+   * @param pVec Pointer to the vertex stream.
+   * @param numVerts Number of vertices in the stream.
+   * @see IwGxSetVertStreamWorldSpace, IwGxSetVertStreamViewSpace, IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetVertStream : +CIwSVec3 * uint32;
+  
+  /**
+   * Sets the geometry vertex stream, in viewspace.
+   * @param pVec Pointer to the vertex stream.
+   * @param numVerts Number of vertices in the stream.
+   * @see IwGxSetVertStreamWorldSpace, IwGxSetVertStreamModelSpace, IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetVertStreamViewSpace : +CIwSVec3 * uint32;
+  
+  /**
+   * Sets the geometry vertex stream, in viewspace, using 32-bit vertices (1.19.12 format).
+   * @param pVec Pointer to the vertex stream.
+   * @param numVerts Number of vertices in the stream.
+   * @see IwGxSetVertStreamWorldSpace, IwGxSetVertStreamModelSpace, IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetVertStreamViewSpace : +CIwVec3 * uint32;
+  
+  /**
+   * Sets the geometry vertex stream, in screenspace.
+   * @param pVec Pointer to the vertex stream.
+   * @param numVerts Number of vertices in the stream.
+   * @see IwGxSetVertStreamWorldSpace, IwGxSetVertStreamModelSpace, IwGxSetVertStreamViewSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetVertStreamScreenSpace : +CIwSVec2 * uint32;
+  
+  /**
+   * Sets the geometry vertex stream, in sub pixel screenspace.
+   * @param pVec Pointer to the vertex stream.
+   * @param numVerts Number of vertices in the stream.
+   * @see IwGxSetVertStreamWorldSpace, IwGxSetVertStreamModelSpace, IwGxSetVertStreamViewSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetVertStreamScreenSpaceSubPixel : +CIwSVec2 * !ints;
+  
+  /**
+   * Sets the viewspace origin for viewspace vertex streams.
+   * @param pOrg Pointer to the viewspace origin.
+   * @see IwGxGetViewSpaceOrg, IwGxSetVertStreamViewSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetViewSpaceOrg : +CIwSVec3;
+  
+  /**
+   * Sets the viewspace origin for viewspace vertex streams.
+   * @param pOrg Pointer to the viewspace origin.
+   * @see IwGxGetViewSpaceOrg, IwGxSetVertStreamViewSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetViewSpaceOrg : +CIwVec3;
+  
+  /**
+   * Gets the viewspace origin for viewspace vertex streams.
+   * @return The current viewspace origin.
+   * @see IwGxSetViewSpaceOrg, IwGxSetVertStreamViewSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetViewSpaceOrg : unit -> CIwVec3;
+  
+  /**
+   * Sets the screenspace origin for screenspace vertex streams.
+   * @param pOrg Pointer to the screenspace origin.
+   * @see IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetScreenSpaceOrg : +CIwSVec2;
+  
+  /**
+   * Sets the slot for screenspace drawing. Positive values refer to the "front" slots - negative values refer to the "back" slots
+   * (the two's complement of a negative value is the "back" slot ID).
+   * @param slotID The screenspace slot ID to draw to.
+   * @see IwGxGetScreenSpaceSlot, IwGxSetScreenSpaceOrg, IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetScreenSpaceSlot : int32;
+  
+  /**
+   * Gets the slot for screenspace drawing. Positive values refer to the "front" slots - negative values refer to the "back" slots
+   * (the two's complement of a negative value is the "back" slot ID).
+   * @return The screenspace slot ID to draw to.
+   * @see IwGxSetScreenSpaceSlot, IwGxSetScreenSpaceOrg, IwGxSetVertStreamScreenSpace
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetScreenSpaceSlot : unit -> int32;
+  
+  
+  /**
+   * Sets the geometry vertex normal stream, in modelspace.
+   * @param pVec Pointer to the vertex normal stream, or NULL to clear the stream.
+   * @param numVerts Number of vertex normals in the stream.
+   * @note To disable diffuse lighting, clear the normal stream by passing in NULL.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // void    IwGxSetNormStream(+CIwSVec3 pVec, uint32 numNorms = 0);
+  proc IwGxSetNormStream : +CIwSVec3 * !ints;
+  proc IwGxSetNormStream : +CIwSVec3;
+  
+  /**
+   * Sets the geometry vertex tangent stream, in modelspace.
+   * @param pVec Pointer to the vertex tangent stream, or NULL to clear the stream.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetTangentStream : +CIwSVec3;
+  
+  /**
+   * Sets the geometry vertex bitangent stream, in modelspace.
+   * @param pVec Pointer to the vertex bitangent stream, or NULL to clear the stream.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetBiTangentStream : +CIwSVec3;
+  
+  /**
+   * Sets the geometry vertex colour stream.
+   * @param pCol Pointer to the vertex colour stream, or NULL to clear the stream.
+   * @param numCols Number of vertex colours in the stream.
+   * @par Required Header Files
+   * @note To disable the vertex colour stream, pass in NULL.
+   * IwGx.h
+   */
+  // void    IwGxSetColStream(+CIwColour pCol, uint32 numCols = 0);
+  proc IwGxSetColStream : +CIwColour * !ints;
+  proc IwGxSetColStream : +CIwColour;
+  
+  /** @} */
+  /** @} */
+  
+  /**
+   * @addtogroup iwgxgroup
+   * @{
+   */
+  
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup iwgxUV UV Streams
+   *
+   * @note For more information on UV streams,
+   * see the @ref streams "Streams"
+   * section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  
+  /**
+   * Sets the geometry UV stream.
+   * @param pUV Pointer to the geometry UV stream.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetUVStream : +CIwSVec2 * !ints;
+  proc IwGxSetUVStream : +CIwSVec2;
+  
+  /**
+   * Sets the current UV offset.
+   * @param pOfs Pointer to a UV offset to set.
+   * @param stream UV stream to offset.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetUVOfs : +CIwSVec2 * !ints;
+  proc IwGxSetUVOfs : +CIwSVec2;
+  
+  
+  /**
+   * Gets the current IV offset.
+   * @param stream UV stream to offset.
+   * @result A reference to the current UV offset, held by the CIwGxState.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // CIwSVec2 _IwGxGetUVOfs(uint32 stream = 0) {return IwGetGxState()->m_UVOfs[stream];}
+  gen _IwGxGetUVOfs : uint32 -> CIwSVec2;
+  gen _IwGxGetUVOfs : unit -> CIwSVec2;
+  
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup iwgxrasterisation Rasterisation Pipeline
+   *
+   * @note For more information on Rasterisation,
+   * see the @ref rasterisation "Rasterisation"
+   * section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  
+  /**
+   * Sets general geometry sorting type. In HW rasterisation batches of geometry are sorted into an optimal
+   * order before submission to the underlying renderer.
+   * Most applications should use default, but these sorting functions allow control over the trade offs.
+   * The default sorting order is IW_GX_SORT_BY_SLOT, meaning the slots are rendered in opaque, alpha,
+   * screen space order and the per-slot sorting modes are used to sort within each slot.
+   * By default, these are: IW_GX_SORT_BY_MATERIAL for opaque and alpha slots and IW_GX_SORT_NONE for the
+   * screen space slot.
+   * @param type Type of sorting for all HW draw calls.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetSortMode : IwGxSortMode;
+  
+  /**
+   * Sets geometry sorting type for opaque batches
+   * @param type Type of sorting between opaque draw calls.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetSortModeOpaque : IwGxSortMode;
+  
+  /**
+   * Sets geometry sorting type for alpha batches
+   * @param type Type of sorting between alpha draw calls.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetSortModeAlpha : IwGxSortMode;
+  
+  /**
+   * Sets geometry sorting type for screen space batches
+   * @param type Type of sorting between screen space draw calls.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetSortModeScreenSpace : IwGxSortMode;
+  
+  /**
+   * Draws geometry by stiching together geometry streams, in various ways, from a supplied index stream.
+   * @param primType Enumerated type specifying whether to create triangles, quads, lines, etc.
+   * @param pInds Pointer to index stream.
+   * @param numInds Number of indices in stream.
+   * @see IwGxFlush, IwGxSwapBuffers
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxDrawPrims : IwGxPrimType * +uint16 * uint32;
+  
+  /**
+   * Flushes any cached geometry to the surface.
+   * @see IwGxDrawPrims, IwGxSwapBuffers
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxFlush : unit;
+  
+  /**
+   * Flips the double-buffers.
+   * @see IwGxFlush, IwGxSwapBuffers
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSwapBuffers : unit;
+  
+  /**
+   * Gets Frames per Second
+   * This value is smoothed over several frames
+   * For a more accurate measure of rendering speed use IwGetGxState()->m_MsPerFrame
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFrameRate : unit -> uint32;
+  
+  /**
+   * Draws a screenspace rectangle, specifying shape only.
+   * @param pXY Pointer to a 2D screenspace coordinate specifying the rectangle top left.
+   * @param pWH Pointer to a 2D screenspace coordinate specifying the rectangle width and height.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxDrawRectScreenSpace : +CIwSVec2 * +CIwSVec2;
+  
+  /**
+   * Draws a screenspace rectangle, specifying shape and UV span.
+   * @param pXY Pointer to a 2D screenspace coordinate specifying the rectangle top left.
+   * @param pWH Pointer to a 2D screenspace coordinate specifying the rectangle width and height.
+   * @param pUV Pointer to the UV coordinate at the top left.
+   * @param pDUV Pointer to the UV span.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxDrawRectScreenSpace : +CIwSVec2 ^ 4;
+  
+  /**
+   * Draws a screenspace rectangle, specifying shape and vertex colours.
+   * @param pXY Pointer to a 2D screenspace coordinate specifying the rectangle top left.
+   * @param pWH Pointer to a 2D screenspace coordinate specifying the rectangle width and height.
+   * @param pCols Pointer to 4 vertex colours, defined in the order top-left, bottom-left, top-right, bottom-right.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxDrawRectScreenSpace : +CIwSVec2 * +CIwSVec2 * +CIwColour;
+  
+  
+  //! Draws a screenspace rectangle, specifying shape, UVs and vertex colours.
+  //! Colours should be defined in the order topleft, bottomleft, topright, bottomright.
+  proc IwGxDrawRectScreenSpace : +CIwSVec2 * +CIwSVec2 * +CIwSVec2 * +CIwSVec2 * +CIwColour;
+  
+  //-----------------------------------------------------------------------------
+  /**
+   * @defgroup iwgxtransform Transform Pipeline
+   *
+   * @note For more information on Transforms,
+   * see the @ref transform "Transform"
+   * section of the <i>IwGx API Documentation</i>.
+   * @{
+   */
+  //-----------------------------------------------------------------------------
+  
+  /**
+   * Sets the far and near plane distances.
+   * @param ifar The distance from camera to the far clipping plane.
+   * @param inear The distance from camera to the near clipping plane.
+   * @see IwGxSetPerspMul
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetFarZNearZ : int32 * int32;
+  
+  /**
+   * Gets the current far plane distance.
+   * @result The current distance from camera to the far clipping plane.
+   * @see IwGxSetFarZNearZ
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFarZ : unit -> int32;
+  
+  /**
+   * Gets the current near plane distance.
+   * @result The current distance from camera to the near clipping plane.
+   * @see IwGxSetFarZNearZ
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetNearZ : unit -> int32;
+  
+  /**
+   * Sets the perspective multiple (the distance from the camera to the viewing plane).
+   * The projection mode will be set to perspective.
+   * This is one way of setting the camera field of view.
+   * @param pm The distance from the camera to the viewing plane.
+   * @see IwGxSetFarZNearZ, IwGxGetPerspMul
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetPerspMul : int32;
+  
+  /**
+   * Gets the current perspective multiple (the distance from the camera to the viewing plane).
+   * @result The current distance from camera to the near clipping plane.
+   * @see IwGxSetPerspMul
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetPerspMul : unit -> int32;
+  
+  /**
+   * Sets 3D rendering to use an orthographic projection.
+   * The projection mode will be set to orthographic.
+   * This call is similar to glOrtho.
+   * @param left The position of the left plane.
+   * @param right The position of the right plane.
+   * @param bottom The position of the bottom plane.
+   * @param top The position of the top plane.
+   * @param nearz The position of the near plane (-1 to keep existing value).
+   * @param farz The position of the far plane (-1 to keep existing value).
+   * @see IwGxSetFarZNearZ, IwGxGetPerspMul
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetOrtho : iwfixed * iwfixed * iwfixed * iwfixed * iwfixed * iwfixed;
+  proc IwGxSetOrtho : iwfixed * iwfixed * iwfixed * iwfixed * iwfixed;
+  proc IwGxSetOrtho : iwfixed * iwfixed * iwfixed * iwfixed;
+  
+  /**
+   * Returns whether the transform pipeline is currently in orthographic mode
+   * @result true if the transform pipeline is currently in orthographic mode
+   * @see IwGxSetFloatTransform IwGxSetFixedTransform
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxIsOrthoProjection : unit -> bool;
+  
+  /**
+   * Switch transforms to use floating point transforms
+   * @see IwGxSetFixedTransform IwGxIsFloatTransform
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetFloatTransform : unit;
+  
+  /**
+   * Switch transforms to use fixed point transforms
+   * @see IwGxSetFloatTransform IwGxIsFloatTransform
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetFixedTransform : unit;
+  
+  /**
+   * Returns whether the transform pipeline is currently in floating point mode
+   * @result true if the transform pipeline is currently in floating point mode
+   * @see IwGxSetFloatTransform IwGxSetFixedTransform
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxIsFloatTransform : unit -> bool;
+  
+  /**
+   * Sets the fixed point view (camera) transform. This call will also switch the
+   * transform/lighting pipeline into fixed point mode.
+   * Implicitly calls IwGxUpdateWorldViewMatrix to update the internal WorldView transform.
+   * @param pMat Pointer to the view transform to set.
+   * @see IwGxUpdateWorldViewMatrix
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetViewMatrix : +CIwMat;
+  
+  /**
+   * Sets the floating point view (camera) transform. This call will also switch the
+   * transform/lighting pipeline into floating point mode.
+   * @param pMat Pointer to the view transform to set.
+   * @see IwGxUpdateWorldViewMatrix
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetViewMatrix : +CIwFMat;
+  
+  /**
+   * Explicitly updates the internal ModelView transform.
+   * @see IwGxSetViewMatrix, IwGxSetModelMatrix
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxUpdateModelViewMatrix : unit;
+  
+  /**
+   * Explicitly updates the internal WorldView transform.
+   * @see IwGxSetViewMatrix
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxUpdateWorldViewMatrix : unit;
+  
+  /**
+   * Sets the fixed point model transform. This call will also switch the
+   * transform/lighting pipeline into fixed point mode.
+   * Implicitly calls IwGxUpdateModelViewMatrix to update the internal ModelView transform.
+   * @param pMat Pointer to the model transform to set.
+   * @param rotationIsIdentity true only if the model transform is identity.
+   * @see IwGxSetViewMatrix, IwGxUpdateModelViewMatrix
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetModelMatrix : +CIwMat * bool;
+  proc IwGxSetModelMatrix : +CIwMat;
+  
+  /**
+   * Sets the floating point model transform. This call will also switch the
+   * transform/lighting pipeline into floating point mode.
+   * @param pMat Pointer to the model transform to set.
+   * @see IwGxSetViewMatrix, IwGxUpdateModelViewMatrix
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetModelMatrix : +CIwFMat;
+  
+  /**
+   * Gets the current fixed point model transform.
+   * @result A reference to the current model transform, held by the CIwGxState.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetModelMatrix : unit -> CIwMat;
+  
+  /**
+   * Gets the current floating point model transform.
+   * @result A reference to the current model transform, held by the CIwGxState.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFModelMatrix : unit -> CIwFMat;
+  
+  /**
+   * Gets the current fixed point view transform.
+   * @result A reference to the current view transform, held by the CIwGxState.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetViewMatrix : unit -> CIwMat;
+  
+  /**
+   * Gets the current floating point view transform.
+   * @result A reference to the current view transform, held by the CIwGxState.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFViewMatrix : unit -> CIwFMat;
+  
+  /**
+   * Gets the current fixed point WorldView transform.
+   * @result A reference to the current WorldView transform, held by the CIwGxState.
+   * @note The WorldView matrix can be used to transform points from worldspace to viewspace.
+   * It is the transpose (inverse) of the view transform.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetWorldViewMatrix : unit -> CIwMat;
+  
+  /**
+   * Gets the current fixed point ModelView transform.
+   * @result A reference to the current ModelView transform, held by the CIwGxState.
+   * @note The ModelView matrix can be used to transform points from modelspace to viewspace.
+   * It is the transpose (inverse) of the view transform, multiplied by the model transform.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetModelViewMatrix : unit -> CIwMat;
+  
+  /**
+   * Gets the current fixed point WorldViewClip transform.
+   * @result A reference to the current WorldViewClip transform, held by the CIwGxState.
+   * @note The WorldViewClip matrix can be used to transform points from worldspace to clipspace. Clipping
+   * functions such as IwGxClipVec() take inputs in clipspace.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetWorldViewClipMatrix : unit -> CIwMat;
+  
+  /**
+   * Gets the current floating point WorldViewClip transform.
+   * @result A reference to the current WorldViewClip transform, held by the CIwGxState.
+   * @note The WorldViewClip matrix can be used to transform points from worldspace to clipspace. Clipping
+   * functions such as IwGxClipVec() take inputs in clipspace.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFWorldViewClipMatrix : unit -> CIwFMat;
+  
+  /**
+   * Gets the current fixed point ModelViewClip transform.
+   * @result A reference to the current ModelViewClip transform, held by the CIwGxState.
+   * @note The ModelViewClip matrix can be used to transform points from modelspace to clipspace. Clipping
+   * functions such as IwGxClipVec() take inputs in clipspace.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetModelViewClipMatrix : unit -> CIwMat;
+  
+  /**
+   * Gets the current floating point ModelViewClip transform.
+   * @result A reference to the current ModelViewClip transform, held by the CIwGxState.
+   * @note The ModelViewClip matrix can be used to transform points from modelspace to clipspace. Clipping
+   * functions such as IwGxClipVec() take inputs in clipspace.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetFModelViewClipMatrix : unit -> CIwFMat;
+  
+  /**
+   * Translates a vector from worldspace to three 16-bit fixed point coordinates
+   * in viewspace.
+   * @param vx Reference to the resulting x-coordinate.
+   * @param vy Reference to the resulting y-coordinate.
+   * @param vz Reference to the resulting z-coordinate.
+   * @param worldPos Vector in worldspace.
+   * @note Does overflow checking in debug mode.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  // proc IwGxWorldToViewXYZ : int16& vx, int16& vy, int16& vz, CIwVec3& worldPos;
+  
+  /*
+   * Sets up the perspective transform (set field of view, near and far clip planes all at once).
+   * @param pm The distance from the camera to the viewing plane.
+   * @param nearClip The distance from camera to near clipping plane.
+   * @param farClip The distance from camera to far clipping plane.
+   * @see IwGxSetFarNear, IwGxSetPerspMul
+   */
+  //void  _IwGxSetPerspective(int32 perspMul, int32 nearClip, int32 farClip);
+  
+  /**
+   * Specify a scissor rectangle for use with screen space primitives. Pixels falling outside the rectangle will be discarded.
+   * @param x The x-coordinate of the top left-hand corner of the scissor rectangle (in screen space coordinates)
+   * @param y The y-coordinate of the bottom right-hand corner of the scissor rectangle (in screen space coordinates)
+   * @param w The width of the scissor rectangle.
+   * @param h The height of the scissor rectangle.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetScissorScreenSpace : int32*4;
+  
+  /**
+   * Get the current screen space scissor rectangle
+   * @result The current screen space scissor rectangle
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetScissorScreenSpace : unit -> CIwRect;
+  
+  /**
+   * Reset the screen space scissor rectangle to default (the entire screen).
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxClearScissorScreenSpace : unit;
+  
+  
+  /**
+   * Sets a light type.
+   * @param id ID of the light.
+   * @param type Type of the light, which can be one of the following:
+   * @li IW_GX_LIGHT_UNUSED Slot is unused.
+   * @li IW_GX_LIGHT_AMBIENT Ambient light.
+   * @li IW_GX_LIGHT_DIFFUSE Diffuse light.
+   * @see IwGxGetLightType, IwGxSetLightCol, IwGxSetLightPos, IwGxSetLightDirn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetLightType : uint32 * IwGxLightType;
+  
+  /**
+   * Gets a light type.
+   * @param id ID of the light.
+   * @return The light type.
+   * @see IwGxSetLightType
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetLightType : uint32 -> IwGxLightType;
+  
+  /**
+   * Sets a light colour.
+   * @param id ID of the light.
+   * @param r 8-bit red component.
+   * @param g 8-bit green component.
+   * @param b 8-bit blue component.
+   * @see IwGxGetLightCol, IwGxSetLightType, IwGxSetLightPos, IwGxSetLightDirn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetLightCol : uint32 * uint8^3;
+  
+  /**
+   * Sets a light colour.
+   * @param id ID of the light.
+   * @param col Colour to set.
+   * @see IwGxGetLightCol, IwGxSetLightType, IwGxSetLightPos, IwGxSetLightDirn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetLightCol : uint32 * +CIwColour;
+  
+  
+  /**
+   * Sets a light specular colour. Specular colour will only take effect for IW_GX_LIGHT_DIFFUSE. Default is white.
+   * @param id ID of the light.
+   * @param r 8-bit red component.
+   * @param g 8-bit green component.
+   * @param b 8-bit blue component.
+   * @param a 8-bit alpha component.
+   * @see IwGxGetLightCol, IwGxSetLightType, IwGxSetLightPos, IwGxSetLightDirn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetLightSpecularCol : uint32 * uint8 * uint8 * uint8 * uint8;
+  
+  /**
+   * Sets a light specular colour. Specular colour will only take effect for IW_GX_LIGHT_DIFFUSE. Default is white.
+   * @param id ID of the light.
+   * @param col Colour to set.
+   * @see IwGxGetLightCol, IwGxSetLightType, IwGxSetLightPos, IwGxSetLightDirn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetLightSpecularCol : uint32 * +CIwColour;
+  
+  
+  /**
+   * Gets a light colour.
+   * @param id ID of the light.
+   * @return The light colour.
+   * @see IwGxSetLightCol
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetLightCol : uint32 -> CIwColour;
+  
+  /**
+   * Sets a light position.
+   * @param id ID of the light.
+   * @param pVec Pointer to position of light, in worldspace.
+   * @see IwGxGetLightPos, IwGxSetLightType, IwGxSetLightCol, IwGxSetLightDirn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetLightPos : uint32 * +CIwSVec3;
+  
+  /**
+   * Gets a light position.
+   * @param id ID of the light.
+   * @return Position of light, in worldspace.
+   * @see IwGxSetLightPos
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetLightPos : uint32 -> CIwSVec3;
+  
+  /**
+   * Sets a light direction.
+   * @param id ID of the light.
+   * @param pVec Pointer to normalised light direction, in worldspace.
+   * @see IwGxGetLightDirn, IwGxSetLightType, IwGxSetLightCol, IwGxSetLightPos
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetLightDirn : uint32 * +CIwSVec3;
+  
+  /**
+   * Gets a light direction.
+   * @param id ID of the light.
+   * @return Direction of light, in worldspace.
+   * @see IwGxSetLightDirn
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetLightDirn : uint32 -> CIwSVec3;
+  
+  /**
+   * Enables or disables use of emissive colours in lighting calculations.
+   * @see IwGxLightingAmbient, IwGxLightingDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxLightingEmissive : bool;
+  
+  /**
+   * Enables or disables use of ambient colours in lighting calculations.
+   * @see IwGxLightingEmissive, IwGxLightingDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxLightingAmbient : bool;
+  
+  /**
+   * Enables or disables use of diffuse colours in lighting calculations.
+   * @see IwGxLightingEmissive, IwGxLightingAmbient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxLightingDiffuse : bool;
+  
+  /**
+   * Enables or disables use of specular colours in lighting calculations. Specular lighting is only available in HW lighting mode.
+   * @see IwGxLightingEmissive, IwGxLightingAmbient
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxLightingSpecular : bool;
+  
+  /**
+   * Enables emissive, ambient and diffuse lighting calculations.
+   * @see IwGxLightingOff, IwGxLightingEmissive, IwGxLightingAmbient, IwGxLightingDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxLightingOn : unit ;
+  
+  /**
+   * Disables emissive, ambient and diffuse lighting calculations.
+   * @see IwGxLightingOn, IwGxLightingEmissive, IwGxLightingAmbient, IwGxLightingDiffuse
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxLightingOff : unit ;
+  
+  /**
+   * Turns on palette sharing for 4-bit or 8-bit palettised textures.
+   * Palette sharing allows textures that share identical palettes to reference the same palette.
+   * @param flags Specify either IW_GX_SHARE_4BIT_PALS or IW_GX_SHARE_8BIT_PALS
+   * @see IwGxRemovePaletteSharing
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxAddPaletteSharing : uint32;
+  
+  /**
+   * Turns off palette sharing for 4-bit or 8-bit palettised textures.
+   * Palette sharing allows textures that share identical palettes to reference the same palette.
+   * @param flags Specify either IW_GX_SHARE_4BIT_PALS or IW_GX_SHARE_8BIT_PALS
+   * @see IwGxAddPaletteSharing
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxRemovePaletteSharing : uint32;
+  
+  /**
+   * Enables use of mipmaps across the entire scene.
+   * @see IwGxMipMappingOff
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxMipMappingOn : unit;
+  
+  /**
+   * Disables use of mipmaps across the entire scene.
+   * @see IwGxMipMappingOn
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxMipMappingOff : unit;
+  
+  /**
+   * Sets the lighting colour on the palettes of the 16 colour textures.
+   * @param r red component of coloured light.
+   * @param g green component of coloured light.
+   * @param b blue component of coloured light.
+   * @param noClear Clear the cached palettes.
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetPalette16Tint : uint8^3 * bool;
+  
+  /**
+   * (Only Has An Effect In Debug Mode) Generates a bitmap representing the contents of VRAM.
+   * This will show the locations and memory sizes of all textures currently stored. The bitmap
+   * will be dumped into the current active data directory.
+   *
+   * Free space is green. 4bit palettised textures appear as they are. 8bit palettised textures take up
+   * twice as much space per pixel; they are shown unstretched but with a yellow border representing the additional
+   * used space. TPages are separated by thick blue lines. This feature immediately shows how many actual
+   * TPages are used and also visually shows the packing efficiency.
+   *
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxVRAMDump : int32;
+  proc IwGxVRAMDump : unit;
+  
+  
+  /**
+   * Sets the mipmap offset. This is used at upload to skip down the mipmap chain, reducing VRAM consumption
+   * at the cost of quality. Non-mipmapped textures or those flagged with IGNORE_MIPMAP_OFFSET_F will not
+   * be affected.
+   * @param offset Mipmap to start uploading from. E.g. offset 1 will start uploading from the 1st mipmap.
+   * The default value is 0.
+   * @note Currently only affects OpenGL ES rendering.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetMipmapOffset : int32;
+  
+  /**
+   * Sets the current material. This defines the entire render state.
+   * @param pMat Pointer to the material the set.
+   * @see IwGxGetMaterial, IwGxSetMaterialFixed
+   * @note This function has no effect if a fixed material has been set using IwGxSetMaterialFixed().
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetMaterial : +CIwMaterial;
+  
+  /**
+   * Gets the current material.
+   * @result Pointer to the material currently set.
+   * @see IwGxSetMaterial
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetMaterial : unit -> +CIwMaterial;
+  
+  /**
+   * Sets the fixed material. If non-NULL, this will set the material as usual, but then effectively "lock" it so that
+   * subsequent calls to IwGxSetMaterial() have no effect. If NULL, the fixed material is cleared, so that subsequent calls
+   * to IwGxSetMaterial() behave as normal.
+   * @param pMat Pointer to the fixed material the set, or NULL to clear the fixed material.
+   * @see IwGxGetMaterialFixed, IwGxSetMaterial
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetMaterialFixed : +CIwMaterial;
+  
+  /**
+   * Gets the current fixed material.
+   * @result Pointer to the material currently set, or NULL if none is set.
+   * @see IwGxSetMaterialFixed
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetMaterialFixed : unit -> +CIwMaterial;
+  
+  /**
+   * Gets a pointer to the global template material.
+   * @result Pointer to the global template material.
+   * @note This material is used as the "template" for all materials created by the application. Whenever a CIwMaterial
+   * is constructed, all members are copied from the template material. By modifying the template material, the user can
+   * modify the default settings for all created materials.
+   * @note Do not confuse the "template" material with the material resource template (CIwResTemplateMTL).
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetMaterialTemplate : unit -> +CIwMaterial;
+  
+  /**
+   * Set the material to copy some members onto the IwGxState, when IwGxSetMaterial() is called.
+   * @param cs Identifier for the member(s) to copy.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetMaterialCopyState : IwGxMaterialCopyState;
+  
+  /**
+   * Set the material NOT to copy some members onto the IwGxState, when IwGxSetMaterial() is called.
+   * @param cs Identifier for the member(s) NOT to copy.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxClearMaterialCopyState : IwGxMaterialCopyState;
+  
+  
+  //-----------------------------------------------------------------------------
+  // SW rasterisation functions
+  //-----------------------------------------------------------------------------
+  
+  /**
+   * Gets the PixelsDrawnBeforeYield value for the SW renderer.
+   * @return Value of PixelsDrawnBeforeYield.
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetPixelsDrawnBeforeYield : unit -> int32;
+  
+  /**
+   * Sets the PixelsDrawnBeforeYield value for the SW renderer.
+   * This is a count equivalent to simple pixels drawn and is weighted for other overhead processing.
+   * @return Value of PixelsDrawnBeforeYield.
+   * @note Only affects software rasterisation.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxSetPixelsDrawnBeforeYield : int32 -> int32;
+  
+  /**
+   * Gets the gamma value of the display.
+   * @return Value of gamma from 0-15, where 10 is neutral.
+   * @note In GL, a slight performance penalty may be incurred if gamma is not set to 10 (the default)
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxGetGamma : unit -> int32;
+  
+  /**
+   * Sets the gamma value of the display.
+   * @param g Value of Gamma from 0-15, where 10 is neutral.
+   * @note In GL, a slight performance penalty may be incurred if gamma is not set to 10 (the default)
+   * @par Required Header Files
+   * IwGx.h
+   */
+  proc IwGxSetGamma : int32;
+  
+  /**
+   * Get the number of free bytes remaining in the poly buffer.
+   * @return Number of free bytes remaining in the poly buffer.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxPolyBufferGetFree : unit -> int32;
+  
+  
+  //-----------------------------------------------------------------------------
+  // GL rasterisation functions
+  //-----------------------------------------------------------------------------
+  /**
+   * Check if a specified OpenGL ES extension is supported by the platform.
+   * @param extEnumVal Enumerated OpenGL ES extension supported by IwGx.
+   * @return true only if the specified OpenGL ES extension is supported by the platform.
+   */
+  gen IwGxIsGLExtensionSupported : IwGxGLExtension -> bool;
+  
+  /**
+   * Is normal mapping supported for materials using EFFECT_NORMAL_MAPPING.
+   * @return True if normal mapping will be visible.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxIsNormalMappingSupported : unit -> bool;
+  
+  /**
+   * Is HW skinning supported.
+   * @return True if HW skinning is supported.
+   * @par Required Header Files
+   * IwGx.h
+   */
+  gen IwGxIsHWSkinningSupported : unit -> bool;
+  
+  
+  proc IwGxNDS_SetTopScreenNext : bool;
+  
+  //-----------------------------------------------------------------------------
+  // GxStream overloads
+  //-----------------------------------------------------------------------------
+  
+  proc IwGxDrawPrims : IwGxPrimType * CIwGxStream * uint32;
+  proc IwGxSetUVStream : CIwGxStream * int32;
+  proc IwGxSetUVStream : CIwGxStream;
+  proc IwGxSetColStream : CIwGxStream * uint32;
+  proc IwGxSetColStream : CIwGxStream;
+  proc IwGxSetBiTangentStream : CIwGxStream;
+  proc IwGxSetTangentStream : CIwGxStream;
+  proc IwGxSetNormStream : CIwGxStream;
+  proc IwGxSetVertStreamWorldSpace : CIwGxStream;
+  proc IwGxSetVertStreamModelSpace : CIwGxStream;
+  proc IwGxSetVertStreamViewSpace : CIwGxStream;
+  proc IwGxSetVertStreamViewSpace : CIwGxStream;
+  proc IwGxSetVertStreamScreenSpace : CIwGxStream;
+  proc IwGxSetVertStreamScreenSpaceSubPixel : CIwGxStream;
+  proc IwGxSetSkinStream : CIwGxStream * CIwGxStream;
+
+}

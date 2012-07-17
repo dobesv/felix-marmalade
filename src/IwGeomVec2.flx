@@ -7,6 +7,8 @@ open class IwGeomVec2 {
       y:int32; //!< y-coordinate of the vector
   };
   
+  typedef iv2 = CIwVec2;
+  
   const Zero : CIwVec2 = "CIwVec2::g_Zero";
   const AxisX : CIwVec2 = "CIwVec2::g_AxisX";
   const AxisY : CIwVec2 = "CIwVec2::g_AxisY";

@@ -7,11 +7,14 @@ open class IwGeomSVec2 {
       y:int16; //!< y-coordinate of the vector
   };
   
+  typedef sv2 = CIwSVec2;
+  
   const Zero : CIwSVec2 = "CIwSVec2::g_Zero";
   const AxisX : CIwSVec2 = "CIwSVec2::g_AxisX";
   const AxisY : CIwSVec2 = "CIwSVec2::g_AxisY";
   
-  ctor CIwSVec2 : int16 * int16 = "CIwSVec2($a)";
+  ctor CIwSVec2 : iwsfixed * iwsfixed = "CIwSVec2($a)";
+  ctor CIwSVec2(x:int, y:int) => CIwSVec2(iwsfixed x, iwsfixed y);
   ctor CIwSVec2 : CIwVec2 = "CIwSVec2($a)";
   ctor CIwSVec2 : CIwFVec2 = "CIwSVec2($a)";
   

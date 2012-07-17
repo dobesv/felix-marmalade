@@ -1850,4 +1850,10 @@ open class IwGx {
   proc IwGxSetVertStreamScreenSpaceSubPixel : CIwGxStream;
   proc IwGxSetSkinStream : CIwGxStream * CIwGxStream;
 
+
+  proc withIwGx(p : unit -> void) = {
+    IwGxInit;
+    p;
+    IwGxTerminate;
+  } 
 }

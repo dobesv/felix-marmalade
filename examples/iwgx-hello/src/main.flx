@@ -1,0 +1,23 @@
+include "IwGx";
+include "s3eDevice";
+
+withIwGx {
+
+  // Set the background colour to (opaque) blue
+  IwGxSetColClear(0, 0, 0xff, 0xff);
+  
+  // Loop forever, until the user or the OS performs some action to quit the app
+  s3e_mainloop {
+      // Clear the surface
+      IwGxClear;
+  
+      // Use the built-in font to display a string at coordinate (120, 150)
+      IwGxPrintString(120, 150, c"Hello, World!");
+  
+      // Standard EGL-style flush of drawing to the surface
+      IwGxFlush();
+  
+      // Standard EGL-style flipping of double-buffers
+      IwGxSwapBuffers();
+  };
+};

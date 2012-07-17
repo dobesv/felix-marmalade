@@ -1,0 +1,22 @@
+include "s3e";
+
+// Wait for a quit request from the host OS
+
+while s3eDeviceCheckQuitRequest() == false do
+  // Fill background blue
+  s3eSurfaceClear(200, 200, 255);
+
+  // Print a line of debug text to the screen at top left (0,0)
+  // Starting the text with the ` (backtick) char followed by 'x' and a hex value
+  // determines the colour of the text.
+  s3eDebugPrint(120, 150, c"`xffffffHello, World!", false);
+
+  // Flip the surface buffer to screen
+  if failed(s3eSurfaceShow()) do
+    println$ "s3eSurfaceShow failed!";
+  done
+  
+  // Sleep for 0ms to allow the OS to process events etc.
+  val ignore = s3eDeviceYield();
+done
+

@@ -1,0 +1,5 @@
+/build_*
+/.cproject
+/.project
+/execute.cmd
+/flxg_stats.txt

@@ -1,0 +1,43 @@
+include "s3eDevice";
+include "IwGx";
+include "Iw2D";
+
+withIw2D {
+  withIwGx {
+    bg_image := Iw2DCreateImage(c"BG.jpg");
+    imgwidth := GetWidth bg_image;
+    imgheight := GetHeight bg_image;
+    
+    // Set the colours
+    IwGxSetColClear(0, 0, 0, 0xff);
+    IwGxPrintSetColour(0xff, 0xff, 0xff);
+    
+    println$ "Entering main loop ...";
+    
+    // Loop forever, until the user or the OS performs some action to quit the app
+    s3e_mainloop {
+      // Clear the buffer
+      IwGxClear;
+      
+      topLeft := CIwSVec2(0,0);
+      screenHeight := IwGxGetScreenHeight();
+      scale := float(screenHeight) / float(imgheight);
+      imageTransformMatrix := IwGeomMat2D::Identity * iwfixed(scale);
+      Iw2DSetTransformMatrix(imageTransformMatrix);
+      
+      Iw2DDrawImage(bg_image, topLeft);
+      
+      //msg := "Size "+str(size.x)+" x "+str(size.y);
+      //IwGxPrintString(120, 100, msg.cstr);
+      
+      // Use the built-in font to display a string at coordinate (120, 150)
+      IwGxPrintString(120, 150, c"Hello, World!");
+    
+      // Standard EGL-style flipping of double-buffers
+      Iw2DSurfaceShow();
+    };
+    
+    // Shut down ...
+    delete bg_image;
+  };
+};

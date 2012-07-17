@@ -1,0 +1,26 @@
+#!/usr/bin/env mkb
+
+commands
+{
+   "$MARMALADE_ROOT/extensions/felix/flx.cmd src\\main"
+}
+
+# files specifies all files to build
+files
+{
+  ["src"]
+	(src)
+	main.flx
+
+  ["gen"]
+	(gen)
+	main.cpp
+	main.hpp
+}
+
+subprojects
+{
+	felix
+	iwgx
+}
+

@@ -183,10 +183,15 @@ proc Rotate : CIwRect * IwGxScreenOrient * int32 * int32 = "$1.Rotate($b);";
   //-----------------------------------------------------------------------------
   // Clear flags
   //-----------------------------------------------------------------------------
-  cenum IwGxClearBufferFlags = //renamed to avoid conflict with function IwGxClearFlags()
+  
+  const IW_GX_COLOUR_BUFFER_F : uint32;
+  const IW_GX_DEPTH_BUFFER_F : uint32;
+  /*
+  cflags IwGxClearBufferFlags = //renamed to avoid conflict with function IwGxClearFlags()
       IW_GX_COLOUR_BUFFER_F, //!< clear colour buffer
       IW_GX_DEPTH_BUFFER_F //!< clear depth buffer
   ;
+  */
   
   //-----------------------------------------------------------------------------
   // Material copy states

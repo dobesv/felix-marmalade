@@ -1,5 +1,13 @@
 This is an extension for marmalade to use the felix programming language to write programs 
-on the marmalade platform.
+on the Marmalade platform.  Visit http://www.madewithmarmalade.com to learn more about that.
+
+== Prerequisites ==
+
+* Windows (maybe)
+* Felix
+* Marmalade
+
+== Setup ==
 
 You'll have to get felix built, then copy build\release into this folder as a folder
 named "felix-dist".
@@ -8,7 +16,11 @@ To compile the felix runtime library for use in marmalade, run:
 
     C:\marmalade\6.0\extensions\felix\felix.mkb --make -n --x86
 
-Create src/main.flx like this:
+== Usage == 
+
+Create a new folder for your project. 
+
+In there, create src/main.flx like this:
 
     include "s3e";
     
@@ -62,12 +74,8 @@ Then create your mkb file, for example you might call it hello.mkb:
   
 And run the build:
 
-    hello.mkb --make -n --x86 --debug
+    hello.mkb --make --launch -n --x86 --debug
 
-Now you should be more or less good to go.
-
-Run hello.mkb for more information about the different ways to launch the project, it can launch
-the Visual Studio IDE for you or just build and run the project from the command line.
-
+Now you should be seeing it run your "hello, world!" example.
   
 

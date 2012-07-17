@@ -1,7 +1,7 @@
-include "s3eSurface"
-include "IwColour"
-include "IwGeom"
-include "IwUtil"
+include "s3eSurface";
+include "IwColour";
+include "IwGeom";
+include "IwUtil";
 
 open class Iw2D {
 
@@ -12,6 +12,8 @@ header '#include <Iw2D.h>';
  */
 
 ctypes CIw2DImage;
+
+proc delete : CIw2DImage;
 
 //class CIw2DImage
 //{
@@ -24,6 +26,7 @@ ctypes CIw2DImage;
      */
 //    virtual int16 GetWidth() = 0;
 fun GetWidth : CIw2DImage -> int16 = "$1.GetWidth()";
+fun GetWidth : +CIw2DImage -> int16 = "$1->GetWidth()";
 
     /**
      * Get the height of the image
@@ -33,6 +36,7 @@ fun GetWidth : CIw2DImage -> int16 = "$1.GetWidth()";
      */
 //    virtual int16 GetHeight() = 0;
 fun GetHeight : CIw2DImage -> int16 = "$1.GetHeight()";
+fun GetHeight : +CIw2DImage -> int16 = "$1->GetHeight()";
 
     /**
      * Get the IwGx material associated with this image
@@ -42,9 +46,10 @@ fun GetHeight : CIw2DImage -> int16 = "$1.GetHeight()";
      */
 //    virtual CIwMaterial* GetMaterial() = 0;
 fun GetMaterial : CIw2DImage -> int16 = "$1.GetMaterial()";
+fun GetMaterial : +CIw2DImage -> int16 = "$1->GetMaterial()";
 
 //    virtual ~CIw2DImage() {};
-proc delete : CIw2DImage = "delete $1;";
+proc delete : +CIw2DImage = "delete $1;";
 //};
 
 /**
@@ -137,7 +142,7 @@ cenum CIw2DImageTransform =
         IW_2D_IMAGE_TRANSFORM_ROT180,                  //!< Rotate 180 degrees
         IW_2D_IMAGE_TRANSFORM_ROT270,                 //!< Rotate 270 degrees clockwise
         IW_2D_IMAGE_TRANSFORM_FLIP_X,                                  //!< Flip horizontally
-        IW_2D_IMAGE_TRANSFORM_FLIP_Y,                                  //!< Flip vertically
+        IW_2D_IMAGE_TRANSFORM_FLIP_Y                                  //!< Flip vertically
 ;
 
 /**
@@ -223,7 +228,7 @@ cenum CIw2DAlphaMode =
     IW_2D_ALPHA_NONE, //!< Normal alpha (blend alpha channel if present in image)
     IW_2D_ALPHA_HALF, //!< Composite 50:50 with current target
     IW_2D_ALPHA_ADD,  //!< Straight additive with current target
-    IW_2D_ALPHA_SUB,  //!< Straight subtractive with current target
+    IW_2D_ALPHA_SUB  //!< Straight subtractive with current target
 ;
 
 
@@ -514,7 +519,7 @@ gen Iw2DCreateImageResource : +char -> +CIw2DImage;
  * Iw2D.h
  */
 // CIw2DImage* Iw2DCreateImageResource(uint32 resourceHash);
-gen Iw2DCreateImageResource : unit32 -> +CIw2DImage;
+gen Iw2DCreateImageResource : uint32 -> +CIw2DImage;
 
 
 /**
@@ -526,7 +531,7 @@ gen Iw2DCreateImageResource : unit32 -> +CIw2DImage;
  * Iw2D.h
  */
 // CIw2DImage* Iw2DCreateImage(CIwImage& image);
-gen Iw2DCreateImageResource : CIwImage -> +CIw2DImage;
+// gen Iw2DCreateImage : CIwImage -> +CIw2DImage;
 
 /**
  * Make a CIw2DImage from an existing surface - note that this is a live window into the
@@ -656,7 +661,7 @@ cenum CIw2DFontAlign =
     IW_2D_FONT_ALIGN_LEFT,
     IW_2D_FONT_ALIGN_CENTRE,
     IW_2D_FONT_ALIGN_BOTTOM,
-    IW_2D_FONT_ALIGN_RIGHT,
+    IW_2D_FONT_ALIGN_RIGHT
 ;
 
 /**
@@ -804,5 +809,11 @@ gen Iw2DGetSurfaceHeight : unit -> int32;
 // CIw2DSurface* Iw2DCreateSurface(int32 w, int32 h);
 gen Iw2DCreateSurface : int32 * int32 -> +CIw2DSurface;
 
+
+proc withIw2D(p : unit -> void) = {
+  Iw2DInit;
+  p;
+  Iw2DTerminate;
+} 
 
 }

@@ -35,7 +35,8 @@ open class IwGxPrint {
 	// void    IwGxPrintString(int32 x0, int32 y0, const char* txt, bool wrap = true); //int32 len, int32 wrap = 1);
 	proc IwGxPrintString : !ints * !ints * +char * bool;
 	proc IwGxPrintString : !ints * !ints * +char;
-
+  proc IwGxPrintString : !ints * !ints * string = "IwGxPrintString($1, $2, $3.c_str());";
+  
 	/**
 	 * Set the default print colour
 	 * @param r Red component
@@ -44,6 +45,7 @@ open class IwGxPrint {
 	 */
 	// void    IwGxPrintSetColour(uint8 r, uint8 g, uint8 b);
 	proc IwGxPrintSetColour : uint8^3;
+  proc IwGxPrintSetColour : !ints * !ints * !ints;
 
 	/**
 	 * Sets the scale factor for printing text
@@ -51,7 +53,7 @@ open class IwGxPrint {
 	 * of each character is multiplied by @e scale. @e scale must be in the range 1 - 10.
 	 */
 	// void    IwGxPrintSetScale(int scale);
-	proc IwGxPrintSetScale : int;
+	proc IwGxPrintSetScale : !ints;
 
 	/**
 	 * Get the current text scale factor

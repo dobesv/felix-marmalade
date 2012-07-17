@@ -1,0 +1,38 @@
+#!/usr/bin/env mkb
+
+debug_defines
+{
+IW_USE_CALLSTACK
+}
+
+commands
+{
+   "$MARMALADE_ROOT/extensions/felix/flx.cmd src\\main"
+}
+
+# files specifies all files to build
+files
+{
+  ["src"]
+	(src)
+	main.flx
+
+  ["gen"]
+	(gen)
+	main.cpp
+	main.hpp
+}
+
+assets
+{
+  (data)
+  BG.jpg
+}
+
+subprojects
+{
+	felix
+	iwgx
+	iw2d
+}
+

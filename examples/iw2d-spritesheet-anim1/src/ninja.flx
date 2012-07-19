@@ -1,0 +1,99 @@
+include "Iw2D";
+
+class Ninja {
+
+  var spritesheet : Iw2D::image;
+  
+  class SmallNinja {
+    filename :=  c"small ninja shinbi sprite sheet.png";
+    size := (98,128);
+    walk1 := (frame=((440,  2),(70, 96)), offset=( 2, 3));
+    walk2 := (frame=((80, 298),(74, 98)), offset=( 1,-4));
+    walk3 := (frame=((70,   2),(66, 94)), offset=(-5,-2));
+    walk4 := (frame=((2,  198),(72, 96)), offset=(-3,-3));
+    walk5 := (frame=((328,198),(74, 98)), offset=( 0,-4));
+    walk6 := (frame=((416,100),(80, 96)), offset=(-2,-3));
+    stand := (frame=((206,  2),(76, 96)), offset=( 2,-3));
+    walk_speed_per_frame := 10;
+  }
+  
+  class LargeNinja {
+    filename :=  c"large ninja shinbi sprite sheet.png";
+    size := (195,256);
+    walk1 := (frame=((151, 586),(141, 194)), offset=(  4, -7), name=c"walk1");
+    walk2 := (frame=((779, 390),(149, 194)), offset=(  1, -7), name=c"walk2");
+    walk3 := (frame=((268,   2),(131, 190)), offset=(-11, -5), name=c"walk3");
+    walk4 := (frame=((326, 196),(153, 192)), offset=( -3, -6), name=c"walk4");
+    walk5 := (frame=((  2, 586),(147, 194)), offset=( -3, -7), name=c"walk5");
+    walk6 := (frame=((  2, 196),(161, 192)), offset=( -5, -6), name=c"walk6");
+    stand := (frame=((455, 390),(149, 192)), offset=(  2, -6), name=c"stand");
+    walk_speed_per_frame := 24;
+  }
+  
+  open LargeNinja;
+
+  walk_frames := (walk1, walk2, walk3, walk2, walk1, stand, walk4, walk5, walk6, walk5, walk4, stand);
+  walk_range_x := (200,1200);
+  
+  var cur_frame_start = 0u64;
+  var cur_frame = walk_frames.0;
+  var cur_frame_num = 0;
+  var cur_x = 0;
+  var walk_right = true;
+  ms_per_frame := 500u64;
+  var last_turn_time = 0u64;
+  var last_turn_x = cur_x;
+  
+  proc init() = {
+    spritesheet = Iw2DCreateImage(filename);
+  }
+
+  proc destroy() => delete spritesheet;
+  
+  proc draw() = {
+    ((src_x, src_y), (src_w, src_h)) := cur_frame.frame;
+    (offset_x, offset_y) := cur_frame.offset;
+    
+    srcTopLeft := svec2(int16 src_x, int16 src_y);
+    srcSize := svec2(int16 src_w, int16 src_h);
+    topLeft := svec2(int16 offset_x + int16 cur_x, int16 offset_y + int16 600);
+    
+    transform := if walk_right == true then IW_2D_IMAGE_TRANSFORM_NONE else IW_2D_IMAGE_TRANSFORM_FLIP_X endif; 
+    with transform {
+      Iw2DDrawImageRegion(spritesheet, topLeft, srcTopLeft, srcSize);
+    };
+    
+    //IwGxPrintString(100, 50, str(cur_frame_num) + ": "+ cur_frame.name);
+  }
+  
+  proc update(ms : uint64) = {
+    if cur_frame_start == 0u64 do
+      cur_frame_start = ms;
+      cur_frame = walk_frames.cur_frame_num;
+    done
+    
+    while ms - cur_frame_start > ms_per_frame do
+      cur_frame_start += ms_per_frame;
+      cur_x += walk_speed_per_frame * if walk_right then 1 else -1 endif;
+      cur_frame_num = (cur_frame_num+1) % int walk_frames.len;
+      cur_frame = walk_frames.cur_frame_num;
+      
+      if last_turn_time == 0u64 do
+        last_turn_time = ms;
+        last_turn_x = cur_x;
+      done
+      
+      if (cur_x > walk_range_x.1) or (cur_x < walk_range_x.0) do
+        right := cur_x < walk_range_x.0;
+        if right != walk_right do
+          walk_right = right;
+          last_turn_time = ms;
+          last_turn_x = cur_x;
+        done
+      done
+    done
+      
+    
+  }
+
+}

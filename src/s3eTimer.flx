@@ -1,0 +1,11 @@
+
+open class s3eTimer {
+  header "#include <s3eTimer.h>";
+  
+  // Get number of millis since this process started
+  gen s3eTimerGetMs : unit -> uint64;
+  
+  // Get number of millis since this process started
+  gen s3eTimerGetUST : unit -> uint64;
+}
+

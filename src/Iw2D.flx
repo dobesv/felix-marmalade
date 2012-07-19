@@ -11,9 +11,8 @@ header '#include <Iw2D.h>';
  * @defgroup iw2dgroup Iw2D API Reference
  */
 
-ctypes CIw2DImage;
-
-proc delete : CIw2DImage;
+type CIw2DImage = "CIw2DImage *";
+typedef image = CIw2DImage;
 
 //class CIw2DImage
 //{
@@ -25,8 +24,7 @@ proc delete : CIw2DImage;
      * Iw2D.h
      */
 //    virtual int16 GetWidth() = 0;
-fun GetWidth : CIw2DImage -> int16 = "$1.GetWidth()";
-fun GetWidth : +CIw2DImage -> int16 = "$1->GetWidth()";
+fun GetWidth : CIw2DImage -> int16 = "$1->GetWidth()";
 
     /**
      * Get the height of the image
@@ -35,8 +33,7 @@ fun GetWidth : +CIw2DImage -> int16 = "$1->GetWidth()";
      * Iw2D.h
      */
 //    virtual int16 GetHeight() = 0;
-fun GetHeight : CIw2DImage -> int16 = "$1.GetHeight()";
-fun GetHeight : +CIw2DImage -> int16 = "$1->GetHeight()";
+fun GetHeight : CIw2DImage -> int16 = "$1->GetHeight()";
 
     /**
      * Get the IwGx material associated with this image
@@ -45,17 +42,19 @@ fun GetHeight : +CIw2DImage -> int16 = "$1->GetHeight()";
      * Iw2D.h
      */
 //    virtual CIwMaterial* GetMaterial() = 0;
-fun GetMaterial : CIw2DImage -> int16 = "$1.GetMaterial()";
-fun GetMaterial : +CIw2DImage -> int16 = "$1->GetMaterial()";
+fun GetMaterial : CIw2DImage -> int16 = "$1->GetMaterial()";
 
 //    virtual ~CIw2DImage() {};
-proc delete : +CIw2DImage = "delete $1;";
+proc delete : CIw2DImage;
+
 //};
 
 /**
  * Object representing a bmp font prepared for blitting
  */
-ctypes CIw2DFont;
+type CIw2DFont = "CIw2DFont *";
+typedef font = CIw2DFont;
+
 //class CIw2DFont
 //{
     /**
@@ -65,8 +64,8 @@ ctypes CIw2DFont;
      * Iw2D.h
      */
 //    virtual int32 GetHeight() = 0;
-fun GetHeight: CIw2DFont -> int32 = "$1.GetHeight()";
-
+fun GetHeight: CIw2DFont -> int32 = "$1->GetHeight()";
+fun height(f:CIw2DFont) => GetHeight(f);
 
 //    virtual ~CIw2DFont() {};
 proc delete : CIw2DFont = "delete $1;";
@@ -76,7 +75,9 @@ proc delete : CIw2DFont = "delete $1;";
  * Object representing an offscreen surface that can be used as a destination and source for blitting
  */
 //class CIw2DSurface
-ctypes CIw2DSurface;
+type CIw2DSurface = "CIw2DSurface *";
+typedef surface = CIw2DSurface;
+
 //{
 //public:
 //    virtual ~CIw2DSurface() {};
@@ -178,6 +179,18 @@ proc Iw2DSetImageTransform : CIw2DImageTransform;
 // CIw2DImageTransform Iw2DGetImageTransform();
 gen Iw2DGetImageTransform : unit -> CIw2DImageTransform;
 
+// Run a proc with the given transform, then reset the image transform
+// back to what it was before.
+proc with (trans:CIw2DImageTransform) (p:unit->void) = {
+  old_trans := Iw2DGetImageTransform();
+  if old_trans == trans do 
+    p;
+  else
+    Iw2DSetImageTransform(trans);
+    p;
+    Iw2DSetImageTransform(old_trans);
+  done
+}
 
 /**
  * Set the font for subsequent string drawing operations. Default is NULL (i.e. a font must be set prior
@@ -188,7 +201,7 @@ gen Iw2DGetImageTransform : unit -> CIw2DImageTransform;
  * Iw2D.h
  */
 // void Iw2DSetFont(CIw2DFont* font);
-proc Iw2DSetFont : +CIw2DFont;
+proc Iw2DSetFont : CIw2DFont;
 
 /**
  * Get the font for subsequent string drawing operations.
@@ -198,7 +211,7 @@ proc Iw2DSetFont : +CIw2DFont;
  * Iw2D.h
  */
 // CIw2DFont* Iw2DGetFont();
-gen Iw2DGetFont : unit -> +CIw2DFont;
+gen Iw2DGetFont : unit -> CIw2DFont;
 
 /**
  * Set the destination surface for subsequent drawing operations. Pass NULL for the default screen surface.
@@ -496,7 +509,8 @@ proc Iw2DFillRect : CIwSVec2 * CIwSVec2;
  * Iw2D.h
  */
 // CIw2DImage* Iw2DCreateImage(const char* filename);
-gen Iw2DCreateImage : +char -> +CIw2DImage; 
+gen Iw2DCreateImage : +char -> CIw2DImage; 
+gen create_image(filename:string) => Iw2DCreateImage(filename.cstr);
 
 /**
  * Create a CIw2DImage from an existing image resource
@@ -507,7 +521,7 @@ gen Iw2DCreateImage : +char -> +CIw2DImage;
  * Iw2D.h
  */
 // CIw2DImage* Iw2DCreateImageResource(const char* resource);
-gen Iw2DCreateImageResource : +char -> +CIw2DImage;
+gen Iw2DCreateImageResource : +char -> CIw2DImage;
 
 /**
  * Create a CIw2DImage from an existing image resource
@@ -519,7 +533,7 @@ gen Iw2DCreateImageResource : +char -> +CIw2DImage;
  * Iw2D.h
  */
 // CIw2DImage* Iw2DCreateImageResource(uint32 resourceHash);
-gen Iw2DCreateImageResource : uint32 -> +CIw2DImage;
+gen Iw2DCreateImageResource : uint32 -> CIw2DImage;
 
 
 /**
@@ -531,7 +545,7 @@ gen Iw2DCreateImageResource : uint32 -> +CIw2DImage;
  * Iw2D.h
  */
 // CIw2DImage* Iw2DCreateImage(CIwImage& image);
-// gen Iw2DCreateImage : CIwImage -> +CIw2DImage;
+// gen Iw2DCreateImage : CIwImage -> CIw2DImage;
 
 /**
  * Make a CIw2DImage from an existing surface - note that this is a live window into the
@@ -543,7 +557,7 @@ gen Iw2DCreateImageResource : uint32 -> +CIw2DImage;
  * Iw2D.h
  */
 // CIw2DImage* Iw2DCreateImage(CIw2DSurface* surface);
-gen Iw2DCreateImage : +CIw2DSurface -> +CIw2DImage;
+gen Iw2DCreateImage : +CIw2DSurface -> CIw2DImage;
 
 
 /**
@@ -555,7 +569,7 @@ gen Iw2DCreateImage : +CIw2DSurface -> +CIw2DImage;
  * Iw2D.h
  */
 // void Iw2DDrawImage(CIw2DImage* image, CIwSVec2 topLeft);
-proc Iw2DDrawImage : +CIw2DImage * CIwSVec2;
+proc Iw2DDrawImage : CIw2DImage * CIwSVec2;
 
 /**
  * Draw an image stretched to arbitrary size at the specified location, modulated by the current colour, using the current alphamode
@@ -568,7 +582,7 @@ proc Iw2DDrawImage : +CIw2DImage * CIwSVec2;
  * Iw2D.h
  */
 // void Iw2DDrawImage(CIw2DImage* image, CIwSVec2 topLeft, CIwSVec2 size);
-proc Iw2DDrawImage : +CIw2DImage * CIwSVec2 * CIwSVec2;
+proc Iw2DDrawImage : CIw2DImage * CIwSVec2 * CIwSVec2;
 
 /**
  * Draw a region of an image at 1:1 size at the specified location, modulated by the current colour, using the current alphamode
@@ -581,7 +595,7 @@ proc Iw2DDrawImage : +CIw2DImage * CIwSVec2 * CIwSVec2;
  * Iw2D.h
  */
 // void Iw2DDrawImageRegion(CIw2DImage* image, CIwSVec2 topLeft, CIwSVec2 regionOffset, CIwSVec2 regionSize);
-proc Iw2DDrawImageRegion : +CIw2DImage * CIwSVec2^3;
+proc Iw2DDrawImageRegion : CIw2DImage * CIwSVec2 * CIwSVec2 * CIwSVec2;
 
 /**
  * Draw a region of an image stretched to arbitrary size at the specified location, modulated by the current colour, using the current alphamode
@@ -596,7 +610,7 @@ proc Iw2DDrawImageRegion : +CIw2DImage * CIwSVec2^3;
  * Iw2D.h
  */
 // void Iw2DDrawImageRegion(CIw2DImage* image, CIwSVec2 topLeft, CIwSVec2 size, CIwSVec2 regionOffset, CIwSVec2 regionSize);
-proc Iw2DDrawImageRegion : +CIw2DImage * CIwSVec2^4;
+proc Iw2DDrawImageRegion : CIw2DImage * CIwSVec2 * CIwSVec2 * CIwSVec2 * CIwSVec2;
 
 
 /**
@@ -614,7 +628,7 @@ proc Iw2DDrawImageRegion : +CIw2DImage * CIwSVec2^4;
  * Iw2D.h
  */
 // void Iw2DDrawImageStretch(CIw2DImage* image, CIwSVec2* areas, CIwSVec2* regions);
-proc Iw2DDrawImageRegion : +CIw2DImage * +CIwSVec2 * +CIwSVec2;
+proc Iw2DDrawImageRegion : CIw2DImage * +CIwSVec2 * +CIwSVec2;
 
 /** @} */
 
@@ -640,7 +654,7 @@ proc Iw2DDrawImageRegion : +CIw2DImage * +CIwSVec2 * +CIwSVec2;
  * Iw2D.h
  */
 // CIw2DFont* Iw2DCreateFontResource(const char* resource);
-gen Iw2DCreateFontResource : +char -> +CIw2DFont;
+gen Iw2DCreateFontResource : +char -> CIw2DFont;
 
 /**
  * Create a CIw2DFont from a .GXFONT file. On Win32 debug builds this
@@ -654,7 +668,7 @@ gen Iw2DCreateFontResource : +char -> +CIw2DFont;
  * Iw2D.h
  */
 // CIw2DFont* Iw2DCreateFont(const char* filename);
-gen Iw2DCreateFont : +char -> +CIw2DFont;
+gen Iw2DCreateFont : +char -> CIw2DFont;
 
 cenum CIw2DFontAlign =
     IW_2D_FONT_ALIGN_TOP,

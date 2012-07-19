@@ -1,0 +1,56 @@
+include "s3e";
+include "IwGx";
+include "Iw2D";
+include "ninja";
+
+withIw2D {
+  withIwGx {
+    bg_image := Iw2DCreateImage(c"Dojo_Wallpaper_1440x900_wallpaperhere.jpg");
+    scene_width := GetWidth bg_image;
+    scene_height := GetHeight bg_image;
+    
+    spritesheet := Iw2DCreateImage(c"large ninja shinbi sprite sheet.png");
+    
+    Ninja::init;
+    
+    // Set the colours
+    IwGxSetColClear(0, 0, 0, 0xff);
+    IwGxPrintSetColour(0xff, 0xff, 0xff);
+    
+    println$ "Entering main loop ...";
+    
+    // Loop forever, until the user or the OS performs some action to quit the app
+    s3e_mainloop {
+      // Clear the buffer
+      IwGxClear;
+      
+      screen_height := IwGxGetScreenHeight();
+      scale := float(screen_height) / float(scene_height);
+      screen_width := IwGxGetScreenWidth();
+      offset := (int screen_width - int (float scene_width * scale)) / 2;
+      imageTransformMatrix := IwGeomMat2D::Identity * iwfixed(scale) + svec2(int16 offset, 0i16);
+      
+      Iw2DSetTransformMatrix(imageTransformMatrix);
+      
+      Iw2DDrawImage(bg_image, svec2(0i16, 0i16));
+      
+      //IwGxPrintString(120, 100, "Offset  = "+offset);
+      
+      // Use the built-in font to display a string at coordinate (120, 150)
+      //IwGxPrintString(120, 150, c"Hello, World!");
+      
+      ms := s3eTimerGetMs();
+      
+      Ninja::update(ms);
+      
+      Ninja::draw();
+      
+      // Standard EGL-style flipping of double-buffers
+      Iw2DSurfaceShow();
+    };
+    
+    // Shut down ...
+    Ninja::destroy;
+    delete bg_image;
+  };
+};

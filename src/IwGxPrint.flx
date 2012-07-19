@@ -35,6 +35,7 @@ open class IwGxPrint {
 	// void    IwGxPrintString(int32 x0, int32 y0, const char* txt, bool wrap = true); //int32 len, int32 wrap = 1);
 	proc IwGxPrintString : !ints * !ints * +char * bool;
 	proc IwGxPrintString : !ints * !ints * +char;
+  proc IwGxPrintString : !ints * !ints * string * bool = "IwGxPrintString($1, $2, $3.c_str(), $4);";
   proc IwGxPrintString : !ints * !ints * string = "IwGxPrintString($1, $2, $3.c_str());";
   
 	/**

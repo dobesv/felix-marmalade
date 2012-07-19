@@ -1,0 +1,970 @@
+include "s3eTypes";
+
+class s3eFile {
+
+  header "#include <s3eFile.h>";
+
+  /**
+   * @addtogroup s3egroup
+   * @{
+   *
+   * @defgroup fileapigroup S3E File API Reference
+   *
+   * For more information on the File functionality provided by the S3E
+   * module, see the "S3E File Overview" section of the
+   * S3E API Documentation.
+   *
+   * @{
+   */
+  
+  const S3E_FILE_EOF : s3eFile; //!< Represents end-of-file
+  
+  /** Opaque file handle type. */
+  type s3eFile = "s3eFile *";
+  
+  /**
+   * The value of the first s3eFile* handle.
+   * Historically s3eFile pointers retured from the S3E API were actual pointers.
+   * Now they are actually integers starting at S3E_FILE_HANDLE_FIRST
+   */
+  const S3E_FILE_HANDLE_FIRST : s3eFile;
+  
+  /**
+   * The maximum length of any file or path passed in to S3E, including the
+   * terminating NULL.
+   */
+  const S3E_FILE_MAX_PATH : size;
+  
+  
+  /**
+   * The maximum number of file handles that can be simultaneously open in S3E
+   */
+  const S3E_FILE_MAX_HANDLES : int;
+  
+  /**
+   * Different seek origin types used by s3eFileSeek().
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  cenum s3eFileSeekOrigin=
+      S3E_FILESEEK_SET,   ///< Beginning of file.
+      S3E_FILESEEK_CUR,   ///< Current position of file pointer.
+      S3E_FILESEEK_END    ///< End of file.
+  ;
+  
+  /**
+   * Abstract file list handle.
+   */
+  type s3eFileList = "s3eFileList *";
+  
+  /**
+   * The value of the first s3eFile* handle.
+   * Historically s3eFile pointers retured from the S3E API were actual pointers.
+   * Now they are actually integers starting at S3E_FILE_HANDLE_FIRST
+   */
+  const S3E_FILE_LIST_HANDLE_FIRST : s3eFileList;
+  
+  /**
+   * additional character that can be used with fileOpen mode specification to
+   * disable use of user file systems
+   */
+  const S3E_FILE_NOUSER_MODECHAR : char;
+  
+  /**
+   * File Properties.
+   * @see s3eFileGetInt
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  cenum s3eFileProperty =
+      /**
+       * Returns wether the rom:// drive is valid and in use.
+       * This is a useful indicator for telling if the data directory
+       * has been mounted as RAM (ROM drive does not exist) or ROM (ROM drive does
+       * exist).
+       */
+      S3E_FILE_ROM_EXISTS,
+  
+      /**
+       * Return the total number of bytes of the storage available on the ram://
+       * drive
+       */
+      S3E_FILE_BYTES_TOTAL,
+  
+      /**
+       * Return the number of bytes free on ram:// drive
+       */
+      S3E_FILE_BYTES_FREE
+  ;
+  
+  
+  /**
+   * File Stats.
+   * @see s3eFileGetFileInt
+   * @see s3eFileGetFileString
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  cenum s3eFileStats =
+      /**
+       * [int, read] Returns whether the file exists.
+       * This property will evaluate to 1 on any file that s3eFileOpen() can
+       * open, and will hence include files in any registered user filesystem.
+       * This produces the same result as calling s3eFileCheckExists().
+       * This property will evaluate to 0 otherwise.
+       */
+      S3E_FILE_ISFILE,
+  
+      /**
+       * [int, read] Returns whether the directory exists.
+       * This property will evaluate to 1 on valid directory paths. This does not
+       * include directories in the user file system.
+       * This property will evaluate to 0 otherwise.
+       */
+      S3E_FILE_ISDIR,
+  
+      /**
+       * [int, read] Returns whether the file exists in the user file system.
+       * This property will evaluate to 1 on any file that the user file system
+       * can open. This property will evaluate to 0 otherwise.
+       */
+      S3E_FILE_ISUSER,
+  
+      /**
+       * [int, read] Returns whether the file is writable.
+       * This property will evaluate to 1 on any file that exists on a writable
+       * drive.
+       * This property will evaluate to 0 on any file that exists on a read-only
+       * drive.
+       * For files that exists on a ROM drive but are shadowable to RAM this will
+       * return 1, as opening the file for writing would succeed.
+       * This property will fail to evaluate for a file that does not exist
+       * (return -1).
+       */
+      S3E_FILE_ISWRITABLE,
+  
+      /**
+       * [int, read] Returns the size of the file, in bytes.
+       * This property will fail to evaluate (return -1) on a non-existant file.
+       */
+      S3E_FILE_SIZE,
+  
+      /**
+       * [int, read] Returns the date of last modification of the file, in
+       * milliseconds elapsed since midnight (00:00:00), January 1, 1970.
+       * This is the same time datum as used by the Timer module. The date
+       * returned is in the local time of the device.
+       * Querying this property will fail for files in the the user file system.
+       * This property will fail to evaluate (return -1) on a non-existant file.
+       */
+      S3E_FILE_MODIFIED_DATE,
+  
+      /**
+       * [int, read] Returns the free space in bytes on the drive that stores
+       * this file.
+       * The path specified must be a valid directory on the drive, for
+       * example '/' or 'ram://'.
+       * If querying the free space fails for any reason (invalid drive, invalid
+       * path), the return value of s3eFileGetFileInt() will always be 0.
+       * If S3E_FILE_DRIVE_BYTES_FREE == S3E_FILE_DRIVE_BYTES_TOTAL then the drive
+       * is empty. If S3E_FILE_DRIVE_BYTES_FREE == 0 then the drive is full.
+       */
+      S3E_FILE_DRIVE_BYTES_FREE,
+  
+      /**
+       * [string, read] Returns a string containing the drive on which the file
+       * is stored.
+       * If the file does not exist this property will fail to evaluate (return
+       * NULL string). If the file is on the user file system, this will return
+       * "user" (without the '://' drive syntax)
+       */
+      S3E_FILE_DRIVE,
+  
+      /**
+       * [int, read] Returns the total size in bytes of the drive that contains
+       * this path. The path specified must be a valid directory on the drive, for
+       * example '/' or 'ram://'.  If querying the total size fails for any reason
+       * (invalid drive, invalid path), the return value of s3eFileGetFileInt()
+       * will always be 0.
+       */
+      S3E_FILE_DRIVE_BYTES_TOTAL,
+  
+      /**
+       * [int, read] Returns a real path string to the file for the drive or path
+       * specified.  For example 'rom://myfile.png' could return
+       * 'g:/data/myfile.png'
+       */
+      S3E_FILE_REAL_PATH
+  ;
+  
+  /**
+   * Retrieves an integer property for this subdevice.
+   * @param property property to get.
+   * @return
+   *  - The value of the requested property if @p property is valid.
+   *  - -1 if @p property is not valid.\n
+   *    Call s3eFileGetError() to retrieve an error code.
+   *    This will return:\n
+   *    #S3E_FILE_ERR_PARAM if @p property is not valid.
+   *
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API int32 s3eFileGetInt(s3eFileProperty property);
+  gen s3eFileGetInt : s3eFileProperty -> int32;
+  
+  /**
+   * Retrieves an integer property for a file.
+   * @param filename file name of file.
+   * @param stat Property of file to query.
+   * @return
+   *  - The value of the requested property if @p stat is valid.
+   *  - (uint64)-1 otherwise
+   *    Call s3eFileGetError() to retrieve an error code.
+   *    This will return:
+   *     - #S3E_FILE_ERR_PARAM if @p stat is not valid or @p filename is NULL.
+   *     - #S3E_FILE_ERR_INVALID_PATH if @p filename could not be resolved onto
+   *       a device-specific path when querying file size or date.  - @ref
+   *       S3E_FILE_ERR_NOT_FOUND if @p filename does not exist when querying file
+   *       size or date.
+   *     - #S3E_FILE_ERR_DEVICE if the underlying file device failed.
+   *
+   * @remark Use this function to query the status of files and directories,
+   * including file size and date.  See @see s3eFileStats for information on
+   * propreties that can be queried.
+   * @see s3eFileGetFileString
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API int64 s3eFileGetFileInt(const char* filename, s3eFileStats stat);
+  gen s3eFileGetFileInt : +char * s3eFileStats -> int64;
+  
+  /**
+   * Retrieves a string property for a file.
+   * @param filename file name of file.
+   * @param stat Property of file to query.
+   * @param str buffer for output.
+   * @param len size of memory pointed to by @p str.
+   * @return @p str on success, or NULL on failure.
+   * If the return is NULL, call s3eFileGetError() to retrieve an error code.
+   * This will return:
+   *  - #S3E_FILE_ERR_PARAM if @p stat is not valid, @p filename is NULL or @p str
+   *    is NULL.
+   *  - #S3E_FILE_ERR_INVALID_PATH if @p filename could not be resolved onto a
+   *    device-specific path.
+   *  - #S3E_FILE_ERR_NOT_FOUND if @p filename does not exist.
+   *  - #S3E_FILE_ERR_DEVICE if the underlying file device failed.
+   *
+   * @remark Currently the only valid string that can be returned is the drive the
+   * file is stored on using the paramater #S3E_FILE_DRIVE. If the resulting
+   * string is more than @p len bytes long it will be truncated.
+   * @see s3eFileGetFileInt
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API char* s3eFileGetFileString(const char* filename, s3eFileStats stat, char* str, int len);
+  proc s3eFileGetFileString : +char * s3eFileStats * +char * int;
+  
+  /**
+   * File Errors.
+   * @see s3eFileGetError
+   * @see s3eFileGetErrorString
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  cenum s3eFileError =
+      S3E_FILE_ERR_NONE           ,     ///< No Error.
+      S3E_FILE_ERR_PARAM          ,     ///< Invalid parameter.
+      S3E_FILE_ERR_TOO_MANY       ,     ///< Maximum number of callbacks exceeded.
+      S3E_FILE_ERR_ALREADY_REG    ,     ///< The specified callback is already registered.
+      S3E_FILE_ERR_NOT_FOUND      ,     ///< Path not found / callback not found for removal.
+      S3E_FILE_ERR_UNAVAIL        ,     ///< file support is unavailable or feature is not supported.
+      S3E_FILE_ERR_DEVICE         ,     ///< The underlying file device failed.
+      S3E_FILE_ERR_UNSUPPORTED    ,     ///< The action requested was is not supported.
+      S3E_FILE_ERR_MEM            ,     ///< Out of operating system memory during operation.
+      S3E_FILE_ERR_GENERIC        ,     ///< Unspecified error.
+      S3E_FILE_ERR_INVALID_DRIVE  ,   ///< Invalid/unsupported drive specified in path. This error code is no longer used.
+      S3E_FILE_ERR_INVALID_PATH   ,   ///< The path could not be resolved onto the device filesytem (e.g. opening ROM://../file).
+      S3E_FILE_ERR_DATA           ,   ///< Data read/write error.
+  
+      S3E_FILE_ERR_INVALID_MODE   ,  ///< Invalid mode specification for s3eFileOpen().
+      S3E_FILE_ERR_EXISTS         ,  ///< File/Path already exists.
+      S3E_FILE_ERR_NOT_EMPTY      ,  ///< Directory not empty on removal.
+      S3E_FILE_ERR_ACCESS         ,  ///< Access permission/error deleting file.
+      S3E_FILE_ERR_NO_MORE        ,  ///< No more files in directory listing.
+      S3E_FILE_ERR_EOF               ///< EOF reached during file operation.
+  ;
+  
+  /**
+   * Retrieves the last error, if any, for this subdevice.
+   * @see s3eFileGetErrorString.
+   *
+   * @remark Calling this function will retrieve the last error and then remove it
+   * from memory; therefore, any further calls to this function will not return
+   * an error unless a subsequent error has occurred.
+   *
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eFileError s3eFileGetError();
+  gen s3eFileGetError : unit -> s3eFileError;
+  
+  /**
+   * Retrieves the last error as a string, if any, for this subdevice. This
+   * funtion is only available in debug builds.
+   * @see s3eFileGetError.
+   *
+   * @remark This function, as opposed to s3eFileGetError(), will always return
+   * the last error no matter how many times it is called. This function should
+   * not be relied upon to indicate whether an error has just occurred.
+   *
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API const char* s3eFileGetErrorString();
+  gen s3eFileGetErrorString : unit -> +char;
+  
+  /**
+   * Opens a file from the file system.
+   * @param filename Pathname of file, either as a relative or absolute path.
+   * @param mode stdio-style string defining the mode in which to open the file.
+   * @return
+   *  - A valid #s3eFile pointer if no error occurred.
+   *  - NULL if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve an error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_INVALID_PATH if @p filename could not be resolved onto a
+   *       device-specific path.
+   *     - #S3E_FILE_ERR_NOT_FOUND if @p filename does not exist.
+   *     - #S3E_FILE_ERR_ACCESS if permission was denied on the file.
+   *     - #S3E_FILE_ERR_DEVICE if the underlying file device failed.
+   *     - #S3E_FILE_ERR_TOO_MANY if the maxmimum number of file handles
+   *       (#S3E_FILE_MAX_HANDLES) has been reached.
+   *
+   * @remark @p mode is a concatenation of an access string, an optional
+   * translation mode string and an optional specifier that prevents use of any
+   * user-defined file systems.
+   *  - The access string can be one of:-
+   *   - "r"  Opens for reading only. If the file does not exist or cannot be found, the s3eFileOpen() call fails.
+   *   - "w"  Opens an empty file for writing. If the given file exists, its contents are destroyed.
+   *   - "a"  Opens for appending (doesn't remove EOF marker) creates the file first if it doesn't exist.
+   *   - "r+" Opens for both reading and writing. (The file must exist.)
+   *   - "w+" Opens an empty file for both reading and writing. If the given file exists, its contents are destroyed.
+   *   - "a+" Opens for reading and appending; creates the file first if it does not exist.
+   *  - The translation mode string can be one of:-
+   *   - "t"  Opens the file in text translation mode. This will translate CR/LF pairs in the file into LF's during read.
+   *          No write translation is performed. S3E will not translate CTRL+Z characters. This is the default.
+   *   - "b"  Opens the file in binary mode. The file will be read untranslated.
+   *  - The optional user file system specified is:-
+   *   - "U"  Disables the use of user-defined file systems when opening this file. The call to s3eFileOpen() will not be passed on to the m_Open function of registered file systems.
+   *
+   * @remark Call s3eFileClose() to close the file handle. Up to @ref
+   * S3E_FILE_MAX_HANDLES may be open at once.
+   *
+   * @remark Multiple simulatneous read handles to the same file are supported,
+   * but only a single write handle is supported per file.  Simultaneous read
+   * and write handles are not supported.
+   *
+   * @remark s3eFileOpen() will first call all the registered user file systems
+   * to open the file before attempting to accesss the device's storage. See @ref
+   * s3eFileUserCallbacks for more information on user file systems.
+   * @see s3eFileClose
+   * @see s3eFileOpenFromMemory
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eFile* s3eFileOpen(const char* filename, const char* mode);
+  gen s3eFileOpen : +char * +char -> s3eFile;
+  gen open(filename:string, mode:string) => s3eFileOpen(filename.cstr, mode.cstr);
+  gen open(filename:string, mode:+char) => s3eFileOpen(filename.cstr, mode);
+  
+  /**
+   * Opens file from memory.
+   * @param buffer Pointer to a buffer to use as a file store.
+   * @param bufferLen Size in bytes of the @p buffer.
+   * @return
+   *  - A valid s3eFile pointer if no error occurred
+   *  - NULL if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve an error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if buffer is NULL .
+   *     - #S3E_FILE_ERR_TOO_MANY if the maximum number of file handles has been reached (#S3E_FILE_MAX_HANDLES).
+   *
+   * @see s3eFileClose
+   * @see s3eFileOpen
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eFile* s3eFileOpenFromMemory(void* buffer, uint32 bufferLen);
+  gen s3eFileOpenFromMemory : +void * uint32 -> s3eFile;
+  
+  /**
+   * Closes an open file.
+   * @param file Pointer to the #s3eFile object to close.
+   * @return
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve an error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if @p file is not a valid file handle.
+   *
+   * @see s3eFileOpen
+   * @see s3eFileOpenFromMemory
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileClose(s3eFile* file);
+  gen s3eFileClose : s3eFile -> s3eResult;
+  proc close(file:s3eFile) = {
+    res := s3eFileClose file;
+    if res.failed do println$ "Close file failed!"; done
+  }
+  
+  /**
+   * Flush file to disk.
+   * @param file file handle to flush.
+   * @return
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve an error code.
+   *    This will return one of:
+   *    - #S3E_FILE_ERR_PARAM if @p file is not a valid file handle.
+   *    - #S3E_FILE_ERR_DEVICE if the underlying file device could not flush data
+   *      to the file.
+   *
+   * @remark If the file was opened using a user file system, this function will
+   * perform no action and return S3E_RESULT_SUCCESS.
+   * @see s3eFileOpen
+   * @see s3eFileOpenFromMemory
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileFlush(s3eFile* file);
+  gen s3eFileFlush : s3eFile -> s3eResult;
+  
+  /**
+   * Reads some data from an open file.
+   * @param  buffer Pointer to the area in memory at which to start reading.
+   * @param  elemSize Size in bytes of a single data element to be read.
+   * @param  noElems Number of data elements to read, in bytes.
+   * @param  file Pointer to the #s3eFile object to read from.
+   * @return The full number of items actually read (same caveats as fread).
+   * The total number of bytes read is (elemSize * noElems).  If the number of
+   * items read is less than noElems, an error code is set.  Call
+   * s3eFileGetError() to retrieve the error code.  This will return one of:
+   *  - #S3E_FILE_ERR_PARAM @p buffer is NULL or @p file is invalid.
+   *  - #S3E_FILE_ERR_DATA if the underlying file device failed to read in data.
+   *  - #S3E_FILE_ERR_EOF if the end of the file was reached before all the data
+   *    could be read in.
+   *
+   * @remark Note that if the file was opened in text translation mode, the
+   * number of bytes read from the file may be larger than than @p elemSize*@p
+   * noElems due to CR/LF translation.
+   *
+   * @remark If @p file was opened with a user file system, this will call the
+   * user file system to perform the read.
+   * see #s3eFileUserCallbacks for more on user file systems
+   *
+   * @see s3eFileWrite
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API uint32 s3eFileRead(void* buffer, uint32 elemSize, uint32 noElems, s3eFile* file);
+  gen s3eFileRead : +void * size * size * s3eFile -> size; 
+  gen s3eFileRead : +char * size * size * s3eFile -> size; 
+  gen read_string(fp:s3eFile)(count:size):string = {
+    buf := varray[char](count);
+    var total_read = size 0;
+    while total_read < count and eof(fp) == false do
+      actual := s3eFileRead(carray[char](buf), size 1, count, fp);
+      total_read += actual;
+    done
+    return string(carray[char](buf), total_read);
+  }
+  
+  // Read the whole rest of the file
+  gen read_all_string(fp:s3eFile):string =>
+    read_string fp (fp.get_size - fp.tell);
+    
+   
+  /**
+   * Writes some data to an open file.
+   * @param  buffer Pointer to the area of memory at which to start writing.
+   * @param  elemSize Size in bytes of a single element of data to write.
+   * @param  noElems Number of data elements to write, in bytes.
+   * @param  file Pointer to the #s3eFile object to write to.
+   * @return The full number of items actually written (same caveats as fwrite).
+   * The total number of bytes written is (@p elemSize * @p noElems).  If the
+   * number of items written is less than @p noElems, an error code is set.  Call
+   * s3eFileGetError() to retrieve the error code.  This will return one of:
+   *  - #S3E_FILE_ERR_PARAM @p buffer is NULL or @p file is invalid.
+   *  - #S3E_FILE_ERR_DATA if the underlying file device failed to write the data
+   *    or an attempt was made to write beyond the end of a memory file's buffer.
+   *  - #S3E_FILE_ERR_UNSUPPORTED if @p file is a file opened from a user
+   *    filesystem and the user filesystem's m_Write function is NULL.
+   *
+   * @remark If @p file was opened with a user file system, this will call the
+   * user file system to perform the write.
+   * see #s3eFileUserCallbacks for more on user file systems.
+   * @see s3eFileRead
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API uint32 s3eFileWrite(const void* buffer, uint32 elemSize, uint32 noElems, s3eFile* file);
+  gen s3eFileWrite : +void * size * size * s3eFile -> size;
+  gen s3eFileWrite : +char * size * size * s3eFile -> size;
+  
+  /**
+   * Prints formatted data to a stream.
+   * @param f Pointer to FILE structure
+   * @param fmt Format-control string.
+   * @return The number of bytes written. A negative value
+   * is returned when an output error occurs.
+   * @remark s3eFilePrintf formats and prints a series of characters and values to
+   * the output stream. Each function argument (if any) is converted and output
+   * according to the corresponding format specification in @a fmt.
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_EAPI int s3eFilePrintf(s3eFile* f, const char *fmt, ...);
+  
+  /**
+   * Reads the next char (byte) from an open file.
+   * @param file Pointer to the s3eFile object to read from.
+   * @return The value of the read byte, or #S3E_FILE_EOF if at the end of the
+   * file. If #S3E_FILE_EOF is returned, call s3eFileGetError() to retrieve the
+   * error code. This will return one of:
+   *  - #S3E_FILE_ERR_PARAM if @p file is an invalid handle.
+   *  - #S3E_FILE_ERR_EOF if the end of the file was reached.
+   *  - #S3E_FILE_ERR_DATA if the underlying file device failed to read data.
+   *
+   * @remark If @p file was opened with a user file system, this will call the
+   * user file system to perform the read.
+   * See #s3eFileUserCallbacks for more on user file systems
+   * @see s3eFilePutChar
+   * @see s3eFileRead
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API int32 s3eFileGetChar(s3eFile* file);
+  gen s3eFileGetChar : s3eFile -> int32;
+  
+  /**
+   * Writes the next char (byte) to an open file.
+   * @param c The byte value to write.
+   * @param file Pointer to the #s3eFile object to write to.
+   * @result The value of the written byte, or #S3E_FILE_EOF if the byte could not
+   * be written. If #S3E_FILE_EOF is returned, call #s3eFileGetError() to retrieve
+   * the error code. This will return one of:
+   *   - #S3E_FILE_ERR_PARAM if @p file is an invalid handle.
+   *   - #S3E_FILE_ERR_DATA if data could not be written.
+   *   - #S3E_FILE_ERR_UNSUPPORTED if @p file is a file opened from a user
+   *     filesystem and the user filesystem's m_Write function is NULL.
+   *
+   * @remark If @p file was opened with a user file system, this will call the
+   * user file system to perform the write.
+   * See #s3eFileUserCallbacks for more on user file systems.
+   * @see s3eFilePutChar
+   * @see s3eFileGetChar
+   * @see s3eFileWrite
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API int32 s3eFilePutChar(char c, s3eFile* file);
+  gen s3eFilePutChar : !ints * s3eFile -> int32;
+  
+  /**
+   * Reads a newline-terminated string from a file.
+   * @param  string Storage location for string.
+   * @param  maxLen Maximum number of characters to read.
+   * @param  file Pointer to the #s3eFile object to read from.
+   * @return @p string if the function read any data, NULL if a read error or
+   * end-of-file occurred before data could be read.
+   * If the result is NULL, call s3eFileGetError() to retrieve the error code.
+   * This will return one of:
+   *   - #S3E_FILE_ERR_PARAM if @p string is NULL or @p file is invalid.
+   *   - #S3E_FILE_ERR_DATA if the underlying file device failed to read in data.
+   *   - #S3E_FILE_ERR_EOF if the end of the file was reached before all the data
+   *     could be read in.
+   *
+   * @remark
+   * This function reads characters from the current stream position to and
+   * including the first newline character, to the end of the stream, or until
+   * the number of characters read is equal to @p maxLen - 1, whichever comes
+   * first. The result stored in @p string is appended with a null character. The
+   * newline character, if read, is included in the string.
+   *
+   * @remark This function will also set #S3E_FILE_ERR_DATA or @ref
+   * S3E_FILE_ERR_EOF if a data error or end-of-file occurred after the
+   * first byte of @p string was read.
+   *
+   * @remark If @p file was opened with a user file system, this will call the
+   * user file system to perform the read.
+   * See #s3eFileUserCallbacks for more on user file systems.
+   *
+   * @see s3eFileWrite
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @see s3eFileRead
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API char* s3eFileReadString(char* string, uint32 maxLen, s3eFile* file);
+  proc s3eFileReadString : +char * size * s3eFile;
+  
+  /**
+   * Determines whether the end of the open file has been reached.
+   * @param file Pointer to the s3eFile object to check.
+   * @return
+   *  - S3E_FALSE if the end of @p file has not been reaced
+   *  - S3E_TRUE if the previous file operation reached the end of the file or file
+   *    is invalid. If file is invalid, S3E_FILE_ERR_PARAM will be set. Call
+   *    s3eFileGetError() to check the error code.
+   *
+   * @remark
+   * s3eFileEOF will continue to retrun true once the eof of a file is reached.
+   * Only a call to s3eFileSeek will cause the EOF flag to be reset.
+   *
+   * @remark
+   * If file was opened with a user file system, this will call the user file
+   * system to determine the EOF status.  see #s3eFileUserCallbacks for more
+   * on user file systems
+   *
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eBool s3eFileEOF(s3eFile* file);
+  gen s3eFileEOF : s3eFile -> bool;
+  gen eof(f:s3eFile) => s3eFileEOF(f);
+  
+  /**
+   * Moves the file pointer to a specified position.
+   * @param file Pointer to the #s3eFile object.
+   * @param offset Number of bytes from specified origin to seek to.
+   * @param origin Origin type to use.
+   * @return
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if @p file is invalid, @p origin is invalid, or an
+   *       attempt is made to seek before the beginning of the file.
+   *     - #S3E_FILE_ERR_DEVICE if the underlying file device failed to seek.
+   *
+   * @remark s3eFileSeek() moves the file pointer to a position that is @p offset
+   * bytes from @p origin. @p origin must be one of the following:
+   *  - #S3E_FILESEEK_SET : The beginning of the file.
+   *  - #S3E_FILESEEK_CUR : The current file pointer position.
+   *  - #S3E_FILESEEK_END : The end of the file.
+   *
+   * @remark The file pointer can be positioned anywhere within a file.
+   * For writable files it can be positioned beyond the end of the file. In this
+   * case the next write operation will cause the file to
+   * be expanded with zeros.
+   * Note that s3eFileSeek() may cause confusing results when reading a file in
+   * text (CR/LF translation) mode.
+   *
+   * @see s3eFileTell
+   * @see s3eFileRead
+   * @see s3eFileWrite
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileSeek(s3eFile* file, int32 offset, s3eFileSeekOrigin origin);
+  gen s3eFileSeek : s3eFile * !ints * s3eFileSeekOrigin -> s3eResult;
+  gen seek_to(f:s3eFile, offset:int) => 
+    s3eFileSeek(f, offset, if offset < 0 then S3E_FILESEEK_END else S3E_FILESEEK_SET endif);
+  gen skip(f:s3eFile, offset:int) =>
+    s3eFileSeek(f, offset, S3E_FILESEEK_CUR);
+  
+  /**
+   * Gets the current position of a file pointer.
+   * @param file Pointer to the #s3eFile object.
+   * @return If successful, the current file pointer offset, in bytes;
+   * -1 on error. Call s3eFileGetError() to retrieve the error code.
+   * This will return one of:
+   *  - #S3E_FILE_ERR_PARAM if file is invalid.
+   *
+   * @see s3eFileSeek
+   * @see s3eFileRead
+   * @see s3eFileWrite
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API int32 s3eFileTell(s3eFile* file);
+  gen s3eFileTell : s3eFile -> size;
+  gen tell(fp:s3eFile) => s3eFileTell fp;
+  
+  /**
+   * Returns the size, in bytes, of an open file handle.
+   * @param file Handle to a file produced by s3eFileOpen().
+   * @return On success, the size of the file, in bytes;
+   * -1 on error
+   * Call s3eFileGetError() to retrieve the error code.
+   * This will return one of:
+   *  - #S3E_FILE_ERR_PARAM if @p file is invalid.
+   *  - #S3E_FILE_ERR_DEVICE if the size of @p file could not be found.
+   *
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API int32 s3eFileGetSize(s3eFile* file);
+  gen s3eFileGetSize : s3eFile -> size;
+  gen get_size(f:s3eFile) => s3eFileGetSize f;
+  
+  /**
+   * Creates a single new directory.
+   * @param dirName name of directory.
+   * @result
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if @p dirName is NULL.
+   *     - #S3E_FILE_ERR_INVALID_PATH if @p dirName could not be resolved onto a
+   *       device-specific path.
+   *     - #S3E_FILE_ERR_NOT_FOUND if @p dirName specifies a subdirectory path
+   *       that does not exist.
+   *     - #S3E_FILE_ERR_ACCESS if @p dirName specifies a drive that cannot be
+   *       written to.
+   *     - #S3E_FILE_ERR_EXISTS if @p dirName already exists.
+   *     - #S3E_FILE_ERR_DEVICE if the underlying file device failed .
+   *
+   * @remark The path specified by @p dirName must not exist but any
+   * subdirectories specified must exist as the function
+   * can only create the top level directory.
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileMakeDirectory(const char* dirName);
+  gen s3eFileMakeDirectory : +char -> s3eResult;
+  
+  /**
+   * Deletes a directory.
+   * @param dirName name of directory.
+   * @result
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if @p dirName is NULL.
+   *     - #S3E_FILE_ERR_INVALID_PATH if @p dirName could not be resolved onto a
+   *       device-specific path.
+   *     - #S3E_FILE_ERR_NOT_FOUND if @p dirName specifies a directory that does
+   *       not exist.
+   *     - #S3E_FILE_ERR_NOT_EMPTY if @p dirName specifies a directory that is not
+   *       empty.
+   *     - #S3E_FILE_ERR_ACCESS if @p dirName specifies a drive that cannot be
+   *       written to.
+   *     - #S3E_FILE_ERR_DEVICE if the underlying file device failed.
+   *
+   * @remark Directory must be empty before this is called.
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileDeleteDirectory(const char* dirName);
+  gen s3eFileDeleteDirectory : +char -> s3eResult;
+  
+  /**
+   * Checks whether or not a specified file exists.
+   * @param filename name of file.
+   * @result S3E_FALSE if the specified file does not exist.
+   *         S3E_TRUE if the specified file exists.
+   * @remark This function checks user file systems for the ability to open the
+   * given filename in addition to the device file system. s3eFileCheckExists()
+   * will return S3E_TRUE for any file that s3eFileOpen(\<name\>, "r") would
+   * succeed on.
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eBool s3eFileCheckExists(const char* filename);
+  gen s3eFileCheckExists : +char -> bool;
+  
+  /**
+   * Renames a specified file to a new filename.
+   * @param src Pathname of existing file.
+   * @param dest Pathname of new file.
+   * @return
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if @p src or @p dest is NULL.
+   *     - #S3E_FILE_ERR_INVALID_PATH if @p src or @p dest could not be resolved
+   *       onto a device-specific path.
+   *     - #S3E_FILE_ERR_NOT_FOUND if @p src specifies a file that does not exist,
+   *       or @p src specifies a directory.
+   *     - #S3E_FILE_ERR_ACCESS if @p src or @p dest specifies a drive that cannot
+   *       be written to.
+   *     - #S3E_FILE_ERR_EXISTS if @p dest specifies a file that already exists.
+   *     - #S3E_FILE_ERR_DEVICE if the underlying file device failed .
+   *
+   * @remark s3eFileRename() can be used to either rename a file or move it to a
+   * different directory.  Moving files between drives is permitted, although the
+   * user should note that this may cause a slower copy operation internally.
+   * Renaming a file to itself will succeed.  Renaming directories will fail with
+   * #S3E_FILE_ERR_NOT_FOUND.  @p dest must specify the full path to the new file,
+   * and not just the directory. If @p dest specifies a directory, the function
+   * will fail with error code #S3E_FILE_ERR_EXISTS.
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @see s3eFileCheckExists
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileRename(const char* src, const char* dest);
+  gen s3eFileRename : +char * +char -> s3eResult;
+  
+  /**
+   * Deletes a specified file, if it exists.
+   * @param filename pathname of file.
+   * @return
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *    - #S3E_FILE_ERR_PARAM if @p filename is NULL.
+   *    - #S3E_FILE_ERR_INVALID_PATH if @p filename could not be resolved onto a
+   *      device-specific path.
+   *    - #S3E_FILE_ERR_ACCESS if @p filename specifies a drive that cannot be
+   *      written to.
+   *    - #S3E_FILE_ERR_NOT_FOUND if @p filename specifies a file that does not
+   *      exist, or @p filename specifies a directory.
+   *    - #S3E_FILE_ERR_DEVICE if the underlying file device failed.
+   *
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @see s3eFileCheckExists
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileDelete(const char* filename);
+  gen s3eFileDelete : +char -> s3eResult;
+  
+  /*
+   * Truncates a file (or pads it with zeros) to the given size.
+   * @param filename to truncate
+   * @param length Length in bytes to truncate or pad to.
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *    - #S3E_FILE_ERR_PARAM @p filename is NULL.
+   *    - #S3E_FILE_ERR_INVALID_PATH if @p filename could not be resolved onto a
+   *      device-specific path.
+   *    - #S3E_FILE_ERR_ACCESS if @p filename specifies a drive that cannot be
+   *      written to.
+   *    - #S3E_FILE_ERR_NOT_FOUND if @p filename specifies a file that does not
+   *      exist, or @p filename specifies a directory.
+   *    - #S3E_FILE_ERR_DEVICE if the underlying file device failed .
+   *
+   * @remark If @p length is longer than the length of the existing file, the
+   * file will be padded with zeros. @p filename
+   * must exist.
+   * @see s3eFileOpen
+   * @see s3eFileClose
+   * @see s3eFileCheckExists
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileTruncate(const char* filename, uint32 length);
+  gen s3eFileTruncate : +char * uint32 -> s3eResult;
+  
+  /**
+   * Returns the last time the file was modified. This function is deprecated.
+   * @param filename Pathname of file, relative to the default path already set.
+   * @result Time of last modification in measured in milliseconds since January
+   * 1st 1970. (i.e. UNIX time but in milliseconds).
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API uint64 s3eFileGetLastWriteTime(const char* filename);
+  gen s3eFileGetLastWriteTime : +char -> uint64;
+  
+  /**
+   * Enumerates the contents of a directory.
+   * @param dirName directory to enumerate. Can be NULL to enumerate drives.
+   * @return A handle to be passed to s3eFileListNext(), or NULL if the directory
+   * does not exist. If the result is NULL, call s3eFileGetError() to retrieve the
+   * error code. This will return one of:
+   *   - #S3E_FILE_ERR_NOT_FOUND if @p dirName does not exist, or does not contain
+   *     any files.
+   *   - #S3E_FILE_ERR_DEVICE if the underlying file device failed.
+   *   - #S3E_FILE_ERR_TOO_MANY if too many #s3eFileList handles are open.
+   *   - #S3E_FILE_ERR_MEM if memory could not be allocated from the underlying
+   *     operating system to generate the list.
+   *
+   * @remark Passing NULL as @p dirName is a special case that will enumerate the
+   * drives of the system.
+   *
+   * @remark Call s3eFileListNext() to read the file names or drives. Call
+   * s3eFileListClose() to close the handle.
+   *
+   * @remark This function calls the user file system to enumerate files in
+   * addition to the system filesystem. The files returned by
+   * s3eFileListDirectory(x) are all either files or subdirectories, including
+   * those that can be opened via the user file system.
+   *
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eFileList* s3eFileListDirectory(const char* dirName);
+  gen s3eFileListDirectory : +char -> s3eFileList;
+  
+  /**
+   * Returns the next file in the directory.
+   * @param handle Handle returned from s3eFileListDirectory().
+   * @param filename Pointer to buffer where the filename will be stored.
+   * @param filenameLen Size of buffer pointed to by filename.
+   * @return
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if @p handle is invalid or @p filename is NULL.
+   *     - #S3E_FILE_ERR_NO_MORE if no more files remain to be enumerated.
+   *
+   * @remark This function copies the name of the next file in the directory
+   * listing into @p filename. @p filename must point to at least @p filenameLen
+   * bytes of storage. If the actual file name is longer than @p filenameLen, the
+   * name will be truncated.
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileListNext(s3eFileList* handle, char* filename, int filenameLen);
+  gen s3eFileListNext : s3eFileList * +char * !ints -> s3eResult;
+  
+  /**
+   * Closes the handle returned by s3eFileListDirectory().
+   * @param handle Handle returned from s3eFileListDirectory() to be closed.
+   * @return
+   *  - #S3E_RESULT_SUCCESS if no error occurred.
+   *  - #S3E_RESULT_ERROR if the operation failed.\n
+   *    Call s3eFileGetError() to retrieve the error code.
+   *    This will return one of:
+   *     - #S3E_FILE_ERR_PARAM if @p handle is invalid.
+   *
+   * @par Required Header Files
+   * s3eFile.h
+   */
+  // S3E_API s3eResult s3eFileListClose(s3eFileList* handle);
+  gen s3eFileListClose : s3eFileList -> s3eResult;
+
+  gen load_text_file(path:string):string = {
+      var text:string = "";
+      fp := open(path, c"r");
+      filesize := get_size(fp);
+      result := fp.read_all_string;
+      fp.close();
+      return result;
+  }
+}
+  

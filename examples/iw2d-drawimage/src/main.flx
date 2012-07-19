@@ -19,13 +19,12 @@ withIw2D {
       // Clear the buffer
       IwGxClear;
       
-      topLeft := CIwSVec2(0,0);
       screenHeight := IwGxGetScreenHeight();
       scale := float(screenHeight) / float(imgheight);
       imageTransformMatrix := IwGeomMat2D::Identity * iwfixed(scale);
       Iw2DSetTransformMatrix(imageTransformMatrix);
       
-      Iw2DDrawImage(bg_image, topLeft);
+      Iw2DDrawImage(bg_image, CIwSVec2(0,0));
       
       //msg := "Size "+str(size.x)+" x "+str(size.y);
       //IwGxPrintString(120, 100, msg.cstr);
